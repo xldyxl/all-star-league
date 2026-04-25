@@ -11,8 +11,6 @@ from PIL import ImageGrab
 # ==========================================
 EXCEL_FILE_PATH = r"C:\Users\원영이\Desktop\ATL AUTO\All-Star LEAGUE.xlsm"
 IMGBB_API_KEY = "ae84f8a45971fc994c3a2ce9aa29c8f6"
-
-# 파일들의 위치를 파이썬 파일이 있는 곳으로 고정
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 MACRO_LIST = {
@@ -44,15 +42,14 @@ def upload_to_imgbb(image_path):
 def update_html(urls):
     template_path = os.path.join(BASE_DIR, "template.html")
     index_path = os.path.join(BASE_DIR, "index.html")
-    
     if not os.path.exists(template_path):
-        print(f"❌ 에러: {template_path} 파일을 찾을 수 없습니다!")
+        print(f"❌ 에러: {template_path} 파일이 없습니다!")
         return
 
     with open(template_path, "r", encoding="utf-8") as f:
         content = f.read()
 
-    # HTML 내 치환자 교체
+    # 이미지 링크 갈아끼우기
     content = content.replace("{{LINK_1ST}}", urls.get("CopyRangeAsImage_1st_Y19", ""))
     content = content.replace("{{LINK_2ND}}", urls.get("CopyRangeAsImage_2nd_Y19", ""))
     content = content.replace("{{LINK_UCLG}}", urls.get("CopyRangeAsImage_UCLGROUP_AP33", ""))
@@ -69,32 +66,21 @@ def git_push():
     print("🚚 GitHub로 웹사이트 배달 중...")
     try:
         subprocess.run(["git", "add", "."], check=True, cwd=BASE_DIR)
-        msg = f"League Update: {time.strftime('%Y-%m-%d %H:%M:%S')}"
+        msg = f"Update: {time.strftime('%Y-%m-%d %H:%M:%S')}"
         subprocess.run(["git", "commit", "-m", msg], check=True, cwd=BASE_DIR)
         subprocess.run(["git", "push", "origin", "main"], check=True, cwd=BASE_DIR)
         print("🚀 GitHub 웹사이트 배포 성공!")
     except Exception as e:
-        print(f"❌ Git 오류: {e}")
-
-# ==========================================
-# 3. 메인 로직
-# ==========================================
+        print(f"❌ Git 오류 (수동 Push 필요): {e}")
 
 def main():
-    if not os.path.exists(EXCEL_FILE_PATH):
-        print("❌ 엑셀 파일을 찾을 수 없습니다.")
-        return
-
     print("🚀 [All-Star Super League] 시스템 가동!")
     excel = win32com.client.Dispatch("Excel.Application")
     excel.Visible = True
     excel.DisplayAlerts = False
-
     try:
         wb = excel.Workbooks.Open(os.path.abspath(EXCEL_FILE_PATH))
-        
-        # 🔄 [수정] 구글 시트 새로고침 대기시간 10초로 연장
-        print("📥 구글 시트 데이터 동기화 중... (10초 대기)")
+        print("📥 구글 시트 동기화 중... (10초 대기)")
         wb.RefreshAll()
         time.sleep(10)
         
@@ -102,21 +88,16 @@ def main():
         for m_name, f_name in MACRO_LIST.items():
             print(f"📸 {m_name} 진행 중...")
             excel.Run(m_name)
-            
-            # ⚡ [수정] 클립보드 오류 방지를 위해 대기 시간을 1.0초로 살짝 조정
             time.sleep(1.0)
             
             save_path = os.path.join(BASE_DIR, f_name)
-            
-            # 🛡️ [수정] 클립보드 재시도 로직 추가 (failed to open clipboard 방어)
             img = None
-            for attempt in range(3): # 최대 3번 재시도
+            for _ in range(3): # 클립보드 에러 대비 3회 재시도
                 try:
                     img = ImageGrab.grabclipboard()
-                    if img: break # 이미지 있으면 루프 탈출
-                except:
-                    pass
-                time.sleep(0.5) # 실패 시 0.5초 쉬고 다시 시도
+                    if img: break
+                except: pass
+                time.sleep(0.5)
 
             if img:
                 img.save(save_path, "PNG")
@@ -124,18 +105,13 @@ def main():
                 if url:
                     final_urls[m_name] = url
                     print(f"✅ 완료: {url}")
-            else:
-                print(f"❌ {m_name} 클립보드 오류 (3회 시도 실패)")
-
+        
         if final_urls:
             update_html(final_urls)
             git_push()
-
-        print("\n🎉 모든 자동 업데이트 작업이 끝났습니다!")
         wb.Save()
-
     except Exception as e:
-        print(f"❌ 프로세스 중 치명적 오류 발생: {e}")
+        print(f"❌ 오류 발생: {e}")
     finally:
         excel.Quit()
 
