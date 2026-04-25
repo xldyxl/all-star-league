@@ -1,0 +1,82 @@
+import win32com.client
+import os
+import time
+import requests
+import base64
+from PIL import ImageGrab
+
+# [환경 설정은 그대로 유지하세요]
+EXCEL_FILE_PATH = r"C:\Users\원영이\Desktop\ATL AUTO\All-Star LEAGUE.xlsm"
+IMGBB_API_KEY = "ae84f8a45971fc994c3a2ce9aa29c8f6"
+
+MACRO_LIST = {
+    "CopyRangeAsImage_1st_Y19": "1st.png",
+    "CopyRangeAsImage_2nd_Y19": "2nd.png",
+    "CopyRangeAsImage_FACUP_CM51": "fa.png",
+    "CopyRangeAsImage_UCLGROUP_AP33": "uclg.png",
+    "CopyRangeAsImage_UCLT_CM51": "uclt.png",
+    "CopyRangeAsImage_UELT_CM51": "uelt.png",
+    "CopyRangeAsImage_GOLDENBOOT_HE127": "gb.png",
+}
+
+def upload_to_imgbb(image_path):
+    url = "https://api.imgbb.com/1/upload"
+    try:
+        with open(image_path, "rb") as file:
+            payload = {
+                "key": IMGBB_API_KEY,
+                "image": base64.b64encode(file.read()),
+            }
+            response = requests.post(url, payload)
+            if response.status_code == 200:
+                return response.json()['data']['url']
+    except Exception as e:
+        print(f"❌ {image_path} 업로드 중 오류: {e}")
+    return None
+
+def main():
+    if not os.path.exists(EXCEL_FILE_PATH):
+        print("❌ 엑셀 파일을 찾을 수 없습니다.")
+        return
+
+    print("🚀 올스타 슈퍼리그 자동 업데이트를 시작합니다...")
+    
+    excel = win32com.client.Dispatch("Excel.Application")
+    excel.Visible = True 
+    excel.DisplayAlerts = False # 🤫 엑셀의 모든 경고/알림 팝업을 끕니다!
+
+    try:
+        wb = excel.Workbooks.Open(os.path.abspath(EXCEL_FILE_PATH))
+        final_urls = {}
+
+        for macro_name, file_name in MACRO_LIST.items():
+            print(f"\n📸 {macro_name} 매크로 실행 중...")
+            
+            excel.Run(macro_name)
+            time.sleep(1.5) # 😴 소문자 sleep으로 수정, 대기시간 살짝 늘림
+            
+            img = ImageGrab.grabclipboard()
+            if img:
+                img.save(file_name, "PNG")
+                print(f"💾 {file_name} 저장 완료!")
+                
+                url = upload_to_imgbb(file_name)
+                if url:
+                    final_urls[macro_name] = url
+                    print(f"✅ 주소: {url}")
+            else:
+                print(f"❌ 클립보드 이미지 확인 불가 (VBA 매크로 확인 필요)")
+
+        print("\n" + "="*50)
+        print("🎉 모든 작업 완료! 엑셀을 저장하고 종료합니다.")
+        wb.Save() # 파일을 자동으로 저장합니다.
+
+    except Exception as e:
+        print(f"❌ 오류 발생: {e}")
+    
+    finally:
+        excel.DisplayAlerts = True # 설정 원복
+        excel.Quit()
+
+if __name__ == "__main__":
+    main()
