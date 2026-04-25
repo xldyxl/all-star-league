@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All-Star Super League Center</title>
+    <style>
+        body { background-color: #050505; color: white; font-family: 'Malgun Gothic', sans-serif; margin: 0; text-align: center; }
+        .header { padding: 40px; background: linear-gradient(to bottom, #1a1a1a, #050505); border-bottom: 2px solid #d4af37; }
+        h1 { color: #d4af37; font-size: 2.8rem; margin: 0; text-shadow: 0 0 15px rgba(212,175,55,0.6); }
+        .container { display: flex; flex-wrap: wrap; justify-content: center; gap: 25px; padding: 30px; max-width: 1400px; margin: 0 auto; }
+        .card { background: #111; border: 1px solid #333; border-radius: 15px; overflow: hidden; width: 45%; min-width: 350px; }
+        .card h2 { font-size: 1.1rem; padding: 12px; margin: 0; background: #1a1a1a; color: #d4af37; }
+        .card img { width: 100%; height: auto; display: block; }
+        .full-card { width: 93%; }
+        footer { padding: 40px; color: #555; }
+    </style>
+</head>
+<body>
+    <div class="header"><h1>ALL-STAR SUPER LEAGUE</h1><p>⚽ 실시간 리그 데이터 통합 대시보드</p></div>
+    <div class="container">
+        <div class="card"><h2>🏆 1부 리그 순위표</h2><img src="{{LINK_1ST}}"></div>
+        <div class="card"><h2>🏅 2부 리그 순위표</h2><img src="{{LINK_2ND}}"></div>
+        <div class="card"><h2>🌟 UCL 조별리그</h2><img src="{{LINK_UCLG}}"></div>
+        <div class="card"><h2>🔥 UCL 토너먼트</h2><img src="{{LINK_UCLT}}"></div>
+        <div class="card"><h2>🛡️ UEL 토너먼트</h2><img src="{{LINK_UELT}}"></div>
+        <div class="card"><h2>⚔️ FA컵 대진표</h2><img src="{{LINK_FA}}"></div>
+        <div class="card full-card"><h2>👑 통합 득점왕 (GOLDEN BOOT)</h2><img src="{{LINK_GB}}"></div>
+    </div>
+    <footer>© 2026 All-Star Super League Center | <span id="time"></span></footer>
+    <script>document.getElementById('time').innerText = new Date().toLocaleString();</script>
+</body>
+</html>
