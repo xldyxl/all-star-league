@@ -1,11 +1,6 @@
 import win32com.client
-import os
-import time
-import requests
-import base64
-import subprocess
-import ctypes
-from PIL import ImageGrab
+import os, time, requests, base64, subprocess, ctypes
+from PIL import ImageGrab, Image # Image 모듈 추가
 
 # ==========================================
 # 1. 환경 설정
@@ -14,14 +9,15 @@ EXCEL_FILE_PATH = r"C:\Users\원영이\Desktop\ATL AUTO\All-Star LEAGUE.xlsm"
 IMGBB_API_KEY = "ae84f8a45971fc994c3a2ce9aa29c8f6"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# 확장자를 .jpg로 변경했습니다.
 MACRO_LIST = {
-    "CopyRangeAsImage_1st_Y19": "1st.png",
-    "CopyRangeAsImage_2nd_Y19": "2nd.png",
-    "CopyRangeAsImage_FACUP_CM51": "fa.png",
-    "CopyRangeAsImage_UCLGROUP_AP33": "uclg.png",
-    "CopyRangeAsImage_UCLT_CM51": "uclt.png",
-    "CopyRangeAsImage_UELT_CM51": "uelt.png",
-    "CopyRangeAsImage_GOLDENBOOT_HE127": "gb.png",
+    "CopyRangeAsImage_1st_Y19": "1st.jpg",
+    "CopyRangeAsImage_2nd_Y19": "2nd.jpg",
+    "CopyRangeAsImage_FACUP_CM51": "fa.jpg",
+    "CopyRangeAsImage_UCLGROUP_AP33": "uclg.jpg",
+    "CopyRangeAsImage_UCLT_CM51": "uclt.jpg",
+    "CopyRangeAsImage_UELT_CM51": "uelt.jpg",
+    "CopyRangeAsImage_GOLDENBOOT_HE127": "gb.jpg",
 }
 
 # ==========================================
@@ -29,32 +25,27 @@ MACRO_LIST = {
 # ==========================================
 
 def clear_clipboard():
-    """클립보드를 완전히 비워 이전 이미지가 남지 않게 합니다."""
     try:
         ctypes.windll.user32.OpenClipboard(None)
         ctypes.windll.user32.EmptyClipboard()
         ctypes.windll.user32.CloseClipboard()
-    except:
-        pass
+    except: pass
 
 def upload_to_imgbb(image_path):
     url = "https://api.imgbb.com/1/upload"
     try:
-        with open(image_path, "rb") as file:
-            payload = {"key": IMGBB_API_KEY, "image": base64.b64encode(file.read())}
-            response = requests.post(url, payload)
-            if response.status_code == 200:
-                return response.json()['data']['url']
-    except Exception as e:
-        print(f"❌ {image_path} 업로드 오류: {e}")
-    return None
+        with open(image_path, "rb") as f:
+            res = requests.post(url, {"key": IMGBB_API_KEY, "image": base64.b64encode(f.read())})
+            if res.status_code == 200:
+                return res.json()['data']['url']
+    except: return None
 
 def update_html(urls):
-    template_path = os.path.join(BASE_DIR, "template.html")
-    index_path = os.path.join(BASE_DIR, "index.html")
-    if not os.path.exists(template_path): return
+    t_path = os.path.join(BASE_DIR, "template.html")
+    i_path = os.path.join(BASE_DIR, "index.html")
+    if not os.path.exists(t_path): return
 
-    with open(template_path, "r", encoding="utf-8") as f:
+    with open(t_path, "r", encoding="utf-8") as f:
         content = f.read()
 
     mapping = {
@@ -69,72 +60,50 @@ def update_html(urls):
     for tag, m_name in mapping.items():
         content = content.replace(tag, urls.get(m_name, ""))
 
-    with open(index_path, "w", encoding="utf-8") as f:
+    with open(i_path, "w", encoding="utf-8") as f:
         f.write(content)
     print("🌐 index.html 갱신 완료!")
 
 def git_push():
-    print("🚚 GitHub 배달 중...")
+    print("🚚 GitHub로 전송 중...")
     try:
         subprocess.run(["git", "add", "."], check=True, cwd=BASE_DIR)
-        msg = f"League Update: {time.strftime('%Y-%m-%d %H:%M:%S')}"
+        msg = f"Optimize: {time.strftime('%H:%M:%S')}"
         subprocess.run(["git", "commit", "-m", msg], check=True, cwd=BASE_DIR)
         subprocess.run(["git", "push", "origin", "main"], check=True, cwd=BASE_DIR)
         print("🚀 GitHub 업데이트 성공!")
-    except Exception as e:
-        print(f"❌ Git 오류: {e}")
-
-# ==========================================
-# 3. 메인 로직
-# ==========================================
+    except: pass
 
 def main():
-    print("🚀 [All-Star Super League] 최종 시스템 가동!")
+    print("🚀 [초고속 모드] 자동 중계 시스템 가동!")
     excel = win32com.client.Dispatch("Excel.Application")
     excel.Visible = True
-    excel.DisplayAlerts = False
-
     try:
         wb = excel.Workbooks.Open(os.path.abspath(EXCEL_FILE_PATH))
-        print("📥 구글 시트 새로고침 중 (10초 대기)...")
-        wb.RefreshAll()
-        time.sleep(10)
+        print("📥 새로고침 중 (10초)..."); wb.RefreshAll(); time.sleep(10)
         
         final_urls = {}
         for m_name, f_name in MACRO_LIST.items():
-            print(f"📸 {m_name} 작업 중...")
-            
-            clear_clipboard() 
-            excel.Run(m_name)
-            time.sleep(1.0) 
+            print(f"📸 {m_name} 캡처 및 최적화 중...")
+            clear_clipboard(); excel.Run(m_name); time.sleep(1.2)
             
             save_path = os.path.join(BASE_DIR, f_name)
+            img = ImageGrab.grabclipboard()
             
-            img = None
-            for attempt in range(3):
-                try:
-                    img = ImageGrab.grabclipboard()
-                    if img: break
-                except:
-                    pass
-                time.sleep(0.5)
-
             if img:
-                img.save(save_path, "PNG")
+                # 🌈 [핵심] JPG 저장을 위해 RGB 모드로 변환 후 압축 저장
+                img = img.convert("RGB")
+                img.save(save_path, "JPEG", quality=70) # 화질 70% 수준으로 압축 (용량 대폭 감소)
+                
                 url = upload_to_imgbb(save_path)
                 if url:
                     final_urls[m_name] = url
                     print(f"✅ 주소: {url}")
-            else:
-                print(f"❌ {m_name} 캡처 실패")
-
+        
         if final_urls:
             update_html(final_urls)
             git_push()
         wb.Save()
-
-    except Exception as e:
-        print(f"❌ 오류 발생: {e}")
     finally:
         excel.Quit()
 
