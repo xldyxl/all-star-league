@@ -1,0 +1,119 @@
+import win32com.client
+import os, time, requests, base64, subprocess, ctypes
+from PIL import ImageGrab
+
+# ==========================================
+# 1. 환경 설정
+# ==========================================
+EXCEL_FILE_PATH = r"C:\Users\원영이\Desktop\ATL AUTO\All-Star LEAGUE.xlsm"
+IMGBB_API_KEY = "ae84f8a45971fc994c3a2ce9aa29c8f6"
+
+# 파이썬 파일이 있는 현재 위치(루트)를 기준으로 잡습니다.
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+MACRO_LIST = {
+    "CopyRangeAsImage_1st_Y19": "1st.png",
+    "CopyRangeAsImage_2nd_Y19": "2nd.png",
+    "CopyRangeAsImage_FACUP_CM51": "fa.png",
+    "CopyRangeAsImage_UCLGROUP_AP33": "uclg.png",
+    "CopyRangeAsImage_UCLT_CM51": "uclt.png",
+    "CopyRangeAsImage_UELT_CM51": "uelt.png",
+    "CopyRangeAsImage_GOLDENBOOT_HE127": "gb.png",
+}
+
+# ==========================================
+# 2. 기능 함수
+# ==========================================
+
+def clear_clipboard():
+    try:
+        ctypes.windll.user32.OpenClipboard(None)
+        ctypes.windll.user32.EmptyClipboard()
+        ctypes.windll.user32.CloseClipboard()
+    except: pass
+
+def upload_to_imgbb(image_path):
+    url = "https://api.imgbb.com/1/upload"
+    try:
+        with open(image_path, "rb") as f:
+            res = requests.post(url, {"key": IMGBB_API_KEY, "image": base64.b64encode(f.read())})
+            if res.status_code == 200:
+                return res.json()['data']['url']
+    except: return None
+
+def update_html(urls):
+    t_path = os.path.join(BASE_DIR, "template.html")
+    i_path = os.path.join(BASE_DIR, "index.html")
+    if not os.path.exists(t_path):
+        print(f"❌ {t_path} 파일이 없습니다!")
+        return
+
+    with open(t_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    mapping = {
+        "{{LINK_1ST}}": "CopyRangeAsImage_1st_Y19",
+        "{{LINK_2ND}}": "CopyRangeAsImage_2nd_Y19",
+        "{{LINK_UCLG}}": "CopyRangeAsImage_UCLGROUP_AP33",
+        "{{LINK_UCLT}}": "CopyRangeAsImage_UCLT_CM51",
+        "{{LINK_UELT}}": "CopyRangeAsImage_UELT_CM51",
+        "{{LINK_FA}}": "CopyRangeAsImage_FACUP_CM51",
+        "{{LINK_GB}}": "CopyRangeAsImage_GOLDENBOOT_HE127"
+    }
+    for tag, m_name in mapping.items():
+        content = content.replace(tag, urls.get(m_name, ""))
+
+    with open(i_path, "w", encoding="utf-8") as f:
+        f.write(content)
+    print("🌐 index.html 생성 완료!")
+
+def git_push():
+    print("🚚 GitHub로 실시간 배송 중...")
+    try:
+        subprocess.run(["git", "add", "."], check=True, cwd=BASE_DIR)
+        msg = f"Update: {time.strftime('%H:%M:%S')}"
+        subprocess.run(["git", "commit", "-m", msg], check=True, cwd=BASE_DIR)
+        subprocess.run(["git", "push", "origin", "main"], check=True, cwd=BASE_DIR)
+        print("🚀 GitHub 업데이트 성공!")
+    except:
+        print("❌ Git 오류 발생 (수동 확인 필요)")
+
+def main():
+    print("🚀 [All-Star Super League] 자동 중계 시스템 가동!")
+    excel = win32com.client.Dispatch("Excel.Application")
+    excel.Visible = True
+    excel.DisplayAlerts = False
+    try:
+        wb = excel.Workbooks.Open(os.path.abspath(EXCEL_FILE_PATH))
+        print("📥 구글 시트 동기화 중 (10초)..."); wb.RefreshAll(); time.sleep(10)
+        
+        final_urls = {}
+        for m_name, f_name in MACRO_LIST.items():
+            print(f"📸 {m_name} 작업 중...")
+            clear_clipboard(); excel.Run(m_name); time.sleep(1.2)
+            
+            save_path = os.path.join(BASE_DIR, f_name)
+            img = None
+            for _ in range(3):
+                try:
+                    img = ImageGrab.grabclipboard()
+                    if img: break
+                except: pass
+                time.sleep(0.5)
+
+            if img:
+                img.save(save_path, "PNG")
+                url = upload_to_imgbb(save_path)
+                if url:
+                    final_urls[m_name] = url
+                    print(f"✅ 주소: {url}")
+        
+        if final_urls:
+            update_html(final_urls)
+            git_push()
+        wb.Save()
+    finally:
+        excel.Quit()
+
+if __name__ == "__main__":
+    main()
