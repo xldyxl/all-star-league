@@ -12,9 +12,8 @@ league_players = [
     "ZD장인흥미니7", "조바리안", "kingdom21", "오스트리아", "은안", "Eve올로"
 ]
 
-# 💡 수정된 부분: 시작 시간 설정 (2026-04-21 23:00:00)
-# API의 날짜 형식(YYYY-MM-DDTHH:MM:SS)과 맞춰서 비교합니다.
-TARGET_START_DATETIME = "2026-04-21T23:00:00"
+# 💡 수정된 부분: 2026년 4월 25일 오전 3시 정각
+TARGET_START_DATETIME = "2026-04-26T12:52:00"
 
 def get_ouid(nickname):
     url = f"https://open.api.nexon.com/fconline/v1/id?nickname={nickname}"
@@ -36,7 +35,7 @@ match_results = []
 
 print(f"\n✅ 확인된 참가자: {len(player_map)}명. 경기 기록 수집 시작...")
 
-# 2. 각 유저별 경기 ID 수집 (최근 500경기)
+# 2. 각 유저별 경기 ID 수집
 for name, ouid in player_map.items():
     print(f"📊 {name}님의 최근 '클래식 1on1(40)' 기록 조회 중...")
     offset = 0
@@ -53,13 +52,24 @@ for name, ouid in player_map.items():
 print(f"\n🚀 총 {len(all_league_matches)}개의 경기 중 리그 내전 선별 및 데이터 추출 시작...")
 
 for i, m_id in enumerate(all_league_matches):
+    if (i + 1) % 50 == 0:
+        print(f"... {i + 1}개 경기 상세 조회 완료 ...")
+        
+    time.sleep(0.1) # 서버 차단 방지용 안전장치
+    
     d_res = requests.get(f"https://open.api.nexon.com/fconline/v1/match-detail?matchid={m_id}", headers=headers)
-    if d_res.status_code != 200: continue
+    
+    if d_res.status_code == 429:
+        print("⏳ API 요청 한도 도달! 5초간 휴식합니다...")
+        time.sleep(5)
+        continue
+    elif d_res.status_code != 200: 
+        continue
     
     data = d_res.json()
     m_date_raw = data.get('matchDate', '') 
     
-    # 💡 수정된 부분: 문자열 비교를 통해 4월 21일 23시 이전 경기는 제외
+    # 💡 여기서 4월 26일 새벽 3시 이전 경기들을 걸러냅니다.
     if m_date_raw < TARGET_START_DATETIME: continue
     
     m_datetime_pretty = m_date_raw.replace('T', ' ')
@@ -92,12 +102,11 @@ for i, m_id in enumerate(all_league_matches):
             '홈결과': result1,
             '득점명단': ", ".join(scorers)
         })
-    time.sleep(0.05)
 
 # 4. 저장 및 정렬
 df = pd.DataFrame(match_results)
 if not df.empty:
     df = df.sort_values(by='일시', ascending=False)
     
-df.to_csv("AllStar_League_Match_Verify_With_Time.csv", index=False, encoding="utf-8-sig")
+df.to_csv("AllStar_League_Match_Verify_Latest.csv", index=False, encoding="utf-8-sig")
 print(f"\n🎉 검증 데이터 저장 완료! (기준: {TARGET_START_DATETIME} 이후)")
