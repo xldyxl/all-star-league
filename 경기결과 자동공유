@@ -1,7 +1,6 @@
 import win32com.client
 import os, time, requests, base64, subprocess, ctypes
-from PIL import ImageGrab, Image
-import datetime
+from PIL import ImageGrab, Image # Image 모듈 추가
 
 # ==========================================
 # 1. 환경 설정
@@ -10,6 +9,7 @@ EXCEL_FILE_PATH = r"C:\Users\원영이\Desktop\ATL AUTO\All-Star LEAGUE.xlsm"
 IMGBB_API_KEY = "ae84f8a45971fc994c3a2ce9aa29c8f6"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# 확장자를 .jpg로 변경했습니다.
 MACRO_LIST = {
     "CopyRangeAsImage_1st_Y19": "1st.jpg",
     "CopyRangeAsImage_2nd_Y19": "2nd.jpg",
@@ -43,9 +43,7 @@ def upload_to_imgbb(image_path):
 def update_html(urls):
     t_path = os.path.join(BASE_DIR, "template.html")
     i_path = os.path.join(BASE_DIR, "index.html")
-    if not os.path.exists(t_path): 
-        print("❌ template.html 파일이 없습니다!")
-        return
+    if not os.path.exists(t_path): return
 
     with open(t_path, "r", encoding="utf-8") as f:
         content = f.read()
@@ -62,59 +60,49 @@ def update_html(urls):
     for tag, m_name in mapping.items():
         content = content.replace(tag, urls.get(m_name, ""))
 
-    # 🚀 [업로드 보장 1] 파일 내용에 매번 다른 주석(시간)을 추가해서 Git이 '변경됨'으로 인식하게 함
-    content += f"\n"
-
     with open(i_path, "w", encoding="utf-8") as f:
         f.write(content)
     print("🌐 index.html 갱신 완료!")
 
 def git_push():
-    print("🚚 GitHub로 강제 전송 중...")
+    print("🚚 GitHub로 전송 중...")
     try:
-        # 1. 모든 변경 사항 스테이징
         subprocess.run(["git", "add", "."], check=True, cwd=BASE_DIR)
-        
-        # 2. [업로드 보장 2] --allow-empty 옵션으로 변경사항 없어도 커밋 강제 생성
-        msg = f"Auto Update: {time.strftime('%H:%M:%S')}"
-        subprocess.run(["git", "commit", "--allow-empty", "-m", msg], check=True, cwd=BASE_DIR)
-        
-        # 3. 푸시
+        msg = f"Optimize: {time.strftime('%H:%M:%S')}"
+        subprocess.run(["git", "commit", "-m", msg], check=True, cwd=BASE_DIR)
         subprocess.run(["git", "push", "origin", "main"], check=True, cwd=BASE_DIR)
-        print("🚀 GitHub 강제 업데이트 성공!")
-    except Exception as e:
-        print(f"❌ Git 에러: {e}")
+        print("🚀 GitHub 업데이트 성공!")
+    except: pass
 
 def main():
-    print("🚀 자동 중계 시스템 가동!")
+    print("🚀 [초고속 모드] 자동 중계 시스템 가동!")
     excel = win32com.client.Dispatch("Excel.Application")
     excel.Visible = True
     try:
         wb = excel.Workbooks.Open(os.path.abspath(EXCEL_FILE_PATH))
-        print("📥 데이터 새로고침 중..."); wb.RefreshAll(); time.sleep(10)
+        print("📥 새로고침 중 (10초)..."); wb.RefreshAll(); time.sleep(10)
         
         final_urls = {}
         for m_name, f_name in MACRO_LIST.items():
-            print(f"📸 {m_name} 캡처 중...")
-            clear_clipboard(); excel.Run(m_name); time.sleep(1.5)
+            print(f"📸 {m_name} 캡처 및 최적화 중...")
+            clear_clipboard(); excel.Run(m_name); time.sleep(1.2)
             
             save_path = os.path.join(BASE_DIR, f_name)
             img = ImageGrab.grabclipboard()
             
             if img:
+                # 🌈 [핵심] JPG 저장을 위해 RGB 모드로 변환 후 압축 저장
                 img = img.convert("RGB")
-                img.save(save_path, "JPEG", quality=75) 
+                img.save(save_path, "JPEG", quality=70) # 화질 70% 수준으로 압축 (용량 대폭 감소)
                 
                 url = upload_to_imgbb(save_path)
                 if url:
                     final_urls[m_name] = url
                     print(f"✅ 주소: {url}")
         
-        # URL이 하나라도 있으면 실행 (빈 커밋 옵션이 있으니 무조건 올라감)
         if final_urls:
             update_html(final_urls)
             git_push()
-        
         wb.Save()
     finally:
         excel.Quit()
