@@ -29,8 +29,7 @@ def clear_clipboard():
         ctypes.windll.user32.OpenClipboard(None)
         ctypes.windll.user32.EmptyClipboard()
         ctypes.windll.user32.CloseClipboard()
-    except Exception as e:
-        print(f"❌ 클립보드 정리 실패: {e}")
+    except: pass
 
 def upload_to_imgbb(image_path):
     url = "https://api.imgbb.com/1/upload"
@@ -39,9 +38,7 @@ def upload_to_imgbb(image_path):
             res = requests.post(url, {"key": IMGBB_API_KEY, "image": base64.b64encode(f.read())})
             if res.status_code == 200:
                 return res.json()['data']['url']
-    except Exception as e:
-        print(f"❌ ImgBB 업로드 에러: {e}")
-    return None
+    except: return None
 
 def update_html(urls):
     t_path = os.path.join(BASE_DIR, "template.html")
@@ -62,105 +59,65 @@ def update_html(urls):
         "{{LINK_FA}}": "CopyRangeAsImage_FACUP_CM51",
         "{{LINK_GB}}": "CopyRangeAsImage_GOLDENBOOT_HE127"
     }
-    
     for tag, m_name in mapping.items():
         content = content.replace(tag, urls.get(m_name, ""))
 
-    # 🚀 [강제 업데이트] 깃허브가 '바뀐 거 없다'고 무시 못 하게 타임스탬프 주석 추가
-    now_str = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    # 🚀 [업로드 보장 1] 파일 내용에 매번 다른 주석(시간)을 추가해서 Git이 '변경됨'으로 인식하게 함
     content += f"\n"
 
     with open(i_path, "w", encoding="utf-8") as f:
         f.write(content)
-    print(f"🌐 index.html 갱신 완료! ({now_str})")
+    print("🌐 index.html 갱신 완료!")
 
 def git_push():
-    print("🚚 GitHub로 전송 중...")
+    print("🚚 GitHub로 강제 전송 중...")
     try:
-        # 변경 사항 강제 확인을 위해 status 출력 (디버깅용)
+        # 1. 모든 변경 사항 스테이징
         subprocess.run(["git", "add", "."], check=True, cwd=BASE_DIR)
         
-        # 커밋 메시지에 시간을 넣어 중복 방지
-        msg = f"Update: {datetime.datetime.now().strftime('%H:%M:%S')}"
+        # 2. [업로드 보장 2] --allow-empty 옵션으로 변경사항 없어도 커밋 강제 생성
+        msg = f"Auto Update: {time.strftime('%H:%M:%S')}"
+        subprocess.run(["git", "commit", "--allow-empty", "-m", msg], check=True, cwd=BASE_DIR)
         
-        # 변경사항이 없어도 에러 없이 넘어가게 함
-        result = subprocess.run(["git", "commit", "-m", msg], cwd=BASE_DIR, capture_output=True, text=True)
-        
-        if "nothing to commit" in result.stdout:
-            print("✨ 변경된 내용이 없어 커밋을 건너뜁니다.")
-        else:
-            subprocess.run(["git", "push", "origin", "main"], check=True, cwd=BASE_DIR)
-            print("🚀 GitHub 업데이트 최종 성공!")
+        # 3. 푸시
+        subprocess.run(["git", "push", "origin", "main"], check=True, cwd=BASE_DIR)
+        print("🚀 GitHub 강제 업데이트 성공!")
     except Exception as e:
-        print(f"❌ Git 작업 중 에러 발생: {e}")
+        print(f"❌ Git 에러: {e}")
 
 def main():
-    print("🚀 [강력 모드] 자동 중계 시스템 가동!")
-    
-    # 엑셀 프로세스 초기화
+    print("🚀 자동 중계 시스템 가동!")
+    excel = win32com.client.Dispatch("Excel.Application")
+    excel.Visible = True
     try:
-        excel = win32com.client.Dispatch("Excel.Application")
-        # 엑셀이 다른 작업을 하고 있을 때를 대비해 가시성 설정 시 예외 처리
-        try:
-            excel.Visible = True 
-        except:
-            print("⚠️ 엑셀 창 열기 실패 (백그라운드에서 진행합니다)")
-    except Exception as e:
-        print(f"❌ 엑셀 실행 실패: {e}")
-        return
-
-    try:
-        print(f"📂 파일 여는 중: {EXCEL_FILE_PATH}")
         wb = excel.Workbooks.Open(os.path.abspath(EXCEL_FILE_PATH))
-        
-        print("📥 쿼리 새로고침 중 (약 15초)...")
-        wb.RefreshAll()
-        time.sleep(15) # 쿼리 양이 많으므로 넉넉하게 대기
-        
-        # 🚀 중요: 새로고침 된 데이터를 즉시 저장해서 반영
-        wb.Save() 
-        print("💾 데이터 저장 완료!")
+        print("📥 데이터 새로고침 중..."); wb.RefreshAll(); time.sleep(10)
         
         final_urls = {}
         for m_name, f_name in MACRO_LIST.items():
-            print(f"📸 {m_name} 캡처 시작...")
-            clear_clipboard()
+            print(f"📸 {m_name} 캡처 중...")
+            clear_clipboard(); excel.Run(m_name); time.sleep(1.5)
             
-            try:
-                excel.Run(m_name)
-                time.sleep(2) # 캡처 대기 시간 확보
+            save_path = os.path.join(BASE_DIR, f_name)
+            img = ImageGrab.grabclipboard()
+            
+            if img:
+                img = img.convert("RGB")
+                img.save(save_path, "JPEG", quality=75) 
                 
-                save_path = os.path.join(BASE_DIR, f_name)
-                img = ImageGrab.grabclipboard()
-                
-                if img:
-                    img = img.convert("RGB")
-                    img.save(save_path, "JPEG", quality=75) # 압축률 75%
-                    
-                    url = upload_to_imgbb(save_path)
-                    if url:
-                        final_urls[m_name] = url
-                        print(f"✅ 업로드 성공: {url}")
-                else:
-                    print(f"⚠️ {m_name}: 클립보드에 이미지가 없습니다.")
-            except Exception as e:
-                print(f"❌ 매크로 실행 중 에러 ({m_name}): {e}")
+                url = upload_to_imgbb(save_path)
+                if url:
+                    final_urls[m_name] = url
+                    print(f"✅ 주소: {url}")
         
+        # URL이 하나라도 있으면 실행 (빈 커밋 옵션이 있으니 무조건 올라감)
         if final_urls:
             update_html(final_urls)
             git_push()
-        else:
-            print("⚠️ 업로드된 이미지가 없어 HTML을 갱신하지 않습니다.")
-
-    except Exception as e:
-        print(f"❌ 메인 로직 에러: {e}")
+        
+        wb.Save()
     finally:
-        print("🔚 시스템 종료 중...")
-        try:
-            wb.Close(SaveChanges=True)
-            excel.Quit()
-        except:
-            pass
+        excel.Quit()
 
 if __name__ == "__main__":
     main()
