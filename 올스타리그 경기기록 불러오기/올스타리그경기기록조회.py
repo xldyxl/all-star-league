@@ -13,7 +13,7 @@ league_players = [
 ]
 
 # 💡 수정된 부분: 2026년 4월 25일 오전 3시 정각
-TARGET_START_DATETIME = "2026-04-30T22:58:00"
+TARGET_START_DATETIME = "2026-05-01T01:33:18"
 
 def get_ouid(nickname):
     url = f"https://open.api.nexon.com/fconline/v1/id?nickname={nickname}"
