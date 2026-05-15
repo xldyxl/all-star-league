@@ -9,11 +9,11 @@ headers = {"x-nxopen-api-key": api_key}
 league_players = [
     "Voor", "UNIT", "아들러", "ZD장인지참치", "검정소", 
     "Angel코레아", "0708ManUtd", "chilishake", "Special블루", "Gucci박장군", 
-    "ZD장인흥미니7", "조바리안", "kingdom21", "오스트리아", "은안", "Eve올로"
+    "ZD장인흥미니7", "조바리안", "kingdom21", "오스트리아", "은안", "FC올로냐"
 ]
 
 # 💡 수정된 부분: 2026년 4월 25일 오전 3시 정각
-TARGET_START_DATETIME = "2026-05-13T15:09:00"
+TARGET_START_DATETIME = "2026-05-15T15:51:30"
 
 def get_ouid(nickname):
     url = f"https://open.api.nexon.com/fconline/v1/id?nickname={nickname}"
