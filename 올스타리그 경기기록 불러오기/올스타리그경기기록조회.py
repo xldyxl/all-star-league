@@ -3,7 +3,7 @@ import pandas as pd
 import time
 
 # 1. 설정
-api_key = "live_f4551344020f5d8e5aa2e29c8fea68b1cc76b722b41becd6437c639aef430e52efe8d04e6d233bd35cf2fabdeb93fb0d"
+api_key = "live_f4551344020f5d8e5aa2e29c8fea68b1bf0d4ed1c4a60f2b2f071f78b4e3b165efe8d04e6d233bd35cf2fabdeb93fb0d"
 headers = {"x-nxopen-api-key": api_key}
 
 league_players = [
