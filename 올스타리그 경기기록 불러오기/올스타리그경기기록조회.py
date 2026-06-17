@@ -11,11 +11,12 @@ league_players = [
     "아들러", "유표", "Voor",
     "0708ManUtd", "Special블루", "은안",
     "ZD장인흥미니7", "Angel코레아", "Gucci박장군",
-    "FT난테", "강해린의무회전킥", "kingdom21", "Gucci와퍼"
+    "FT난테", "강해린의무회전킥", "kingdom21", "Gucci와퍼",
+    "콩콩콩룔"
 ]
 
 # 💡 수정된 부분: 2026년 4월 25일 오전 3시 정각
-TARGET_START_DATETIME = "2026-06-07T06:00:00"
+TARGET_START_DATETIME = "2026-06-09T16:41:40"
 
 def get_ouid(nickname):
     url = f"https://open.api.nexon.com/fconline/v1/id?nickname={nickname}"

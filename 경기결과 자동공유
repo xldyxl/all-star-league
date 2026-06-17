@@ -1,6 +1,6 @@
 import win32com.client
 import os, time, requests, base64, subprocess, ctypes
-from PIL import ImageGrab, Image # Image 모듈 추가
+from PIL import ImageGrab, Image
 
 # ==========================================
 # 1. 환경 설정
@@ -9,7 +9,6 @@ EXCEL_FILE_PATH = r"C:\Users\원영이\Desktop\ATL AUTO\All-Star LEAGUE.xlsm"
 IMGBB_API_KEY = "ae84f8a45971fc994c3a2ce9aa29c8f6"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# 확장자를 .jpg로 변경했습니다.
 MACRO_LIST = {
     "CopyRangeAsImage_1st_Y19": "1st.jpg",
     "CopyRangeAsImage_2nd_Y19": "2nd.jpg",
@@ -18,6 +17,7 @@ MACRO_LIST = {
     "CopyRangeAsImage_UCLT_CM51": "uclt.jpg",
     "CopyRangeAsImage_UELT_CM51": "uelt.jpg",
     "CopyRangeAsImage_GOLDENBOOT_HE127": "gb.jpg",
+    "CopyRangeAsImage_PLAYMAKER_HE127": "pm.jpg", # ✅ 8번째 시트 (Playmaker) 추가
 }
 
 # ==========================================
@@ -29,7 +29,8 @@ def clear_clipboard():
         ctypes.windll.user32.OpenClipboard(None)
         ctypes.windll.user32.EmptyClipboard()
         ctypes.windll.user32.CloseClipboard()
-    except: pass
+    except Exception as e: 
+        print(f"⚠️ 클립보드 초기화 실패: {e}")
 
 def upload_to_imgbb(image_path):
     url = "https://api.imgbb.com/1/upload"
@@ -38,12 +39,19 @@ def upload_to_imgbb(image_path):
             res = requests.post(url, {"key": IMGBB_API_KEY, "image": base64.b64encode(f.read())})
             if res.status_code == 200:
                 return res.json()['data']['url']
-    except: return None
+            else:
+                print(f"⚠️ 이미지 업로드 실패 (상태 코드: {res.status_code})")
+    except Exception as e: 
+        print(f"⚠️ ImgBB API 통신 오류: {e}")
+    return None
 
 def update_html(urls):
     t_path = os.path.join(BASE_DIR, "template.html")
     i_path = os.path.join(BASE_DIR, "index.html")
-    if not os.path.exists(t_path): return
+    
+    if not os.path.exists(t_path): 
+        print("⚠️ template.html 파일을 찾을 수 없습니다!")
+        return
 
     with open(t_path, "r", encoding="utf-8") as f:
         content = f.read()
@@ -55,8 +63,10 @@ def update_html(urls):
         "{{LINK_UCLT}}": "CopyRangeAsImage_UCLT_CM51",
         "{{LINK_UELT}}": "CopyRangeAsImage_UELT_CM51",
         "{{LINK_FA}}": "CopyRangeAsImage_FACUP_CM51",
-        "{{LINK_GB}}": "CopyRangeAsImage_GOLDENBOOT_HE127"
+        "{{LINK_GB}}": "CopyRangeAsImage_GOLDENBOOT_HE127",
+        "{{LINK_PM}}": "CopyRangeAsImage_PLAYMAKER_HE127" # ✅ 8번째 HTML 매핑 추가
     }
+    
     for tag, m_name in mapping.items():
         content = content.replace(tag, urls.get(m_name, ""))
 
@@ -72,20 +82,29 @@ def git_push():
         subprocess.run(["git", "commit", "-m", msg], check=True, cwd=BASE_DIR)
         subprocess.run(["git", "push", "origin", "main"], check=True, cwd=BASE_DIR)
         print("🚀 GitHub 업데이트 성공!")
-    except: pass
+    except Exception as e: 
+        print(f"⚠️ GitHub 푸시 실패 (Git이 설치되어 있는지, 권한이 있는지 확인하세요): {e}")
 
 def main():
     print("🚀 [초고속 모드] 자동 중계 시스템 가동!")
     excel = win32com.client.Dispatch("Excel.Application")
     excel.Visible = True
+    
+    wb = None
     try:
         wb = excel.Workbooks.Open(os.path.abspath(EXCEL_FILE_PATH))
-        print("📥 새로고침 중 (10초)..."); wb.RefreshAll(); time.sleep(10)
+        
+        # ✅ 새로고침 10초 -> 20초 변경
+        print("📥 새로고침 중 (20초)...")
+        wb.RefreshAll()
+        time.sleep(20) 
         
         final_urls = {}
         for m_name, f_name in MACRO_LIST.items():
             print(f"📸 {m_name} 캡처 및 최적화 중...")
-            clear_clipboard(); excel.Run(m_name); time.sleep(1.2)
+            clear_clipboard()
+            excel.Run(m_name)
+            time.sleep(1.2)
             
             save_path = os.path.join(BASE_DIR, f_name)
             img = ImageGrab.grabclipboard()
@@ -99,12 +118,23 @@ def main():
                 if url:
                     final_urls[m_name] = url
                     print(f"✅ 주소: {url}")
+            else:
+                print(f"⚠️ {m_name} 캡처 실패: 클립보드에 이미지가 없습니다.")
         
         if final_urls:
             update_html(final_urls)
             git_push()
+            
         wb.Save()
+    except Exception as e:
+        print(f"❌ 치명적 오류 발생: {e}")
     finally:
+        # ✅ 프로세스 종료 전 파일 닫기를 추가하여 엑셀 백그라운드 잔류 방지
+        if wb:
+            try:
+                wb.Close(SaveChanges=True)
+            except:
+                pass
         excel.Quit()
 
 if __name__ == "__main__":

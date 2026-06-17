@@ -23,7 +23,7 @@ gk_results = []
 # 3. 수집 설정 (5,000명 / 4월 13일부터 현재까지)
 TARGET_USER_COUNT = 5000
 
-# 💡 오늘 기준으로 14일 전(4월 13일) 날짜 계산
+# 💡 오늘 기준으로 14일 전 날짜 계산
 target_date_obj = datetime.now() - timedelta(days=14)
 TARGET_START_DATE = target_date_obj.strftime("%Y-%m-%d")
 

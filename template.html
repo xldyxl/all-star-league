@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="300">
     <title>All-Star Super League Center - Mobile Optimized</title>
     <style>
         /* 기본 테마: 다크 모드 */
@@ -13,7 +14,7 @@
         h1 { color: #d4af37; font-size: 2.5rem; margin: 0; text-shadow: 0 0 15px rgba(212,175,55,0.6); }
         p { color: #aaa; margin: 10px 0 0 0; }
 
-        /* [핵심 수정] 이미지들을 1열 세로로 나열하는 컨테이너 설정 */
+        /* 이미지들을 1열 세로로 나열하는 컨테이너 설정 */
         .container {
             display: flex;
             flex-direction: column; /* 무조건 세로 방향으로 나열 */
@@ -24,13 +25,13 @@
             margin: 0 auto;
         }
 
-        /* [핵심 수정] 카드를 가로로 가득 차게 설정 */
+        /* 카드를 가로로 가득 차게 설정 */
         .card {
             background: #111;
             border: 1px solid #333;
             border-radius: 15px;
             overflow: hidden;
-            width: 100%;            /* 부모 컨테이너(max-width: 900px) 너비를 다 씁니다 */
+            width: 100%;            /* 부모 컨테이너 너비를 다 씁니다 */
             box-shadow: 0 5px 20px rgba(0,0,0,0.6);
             transition: transform 0.3s ease, border-color 0.3s ease;
         }
@@ -40,7 +41,7 @@
         /* 카드 제목 설정 */
         .card h2 { font-size: 1.2rem; padding: 15px; margin: 0; background: #1a1a1a; color: #d4af37; border-bottom: 1px solid #333; }
         
-        /* [핵심 수정] 이미지 설정 - 가로 100%, 세로 자동 */
+        /* 이미지 설정 - 가로 100%, 세로 자동 */
         .card img {
             width: 100%;            /* 카드의 가로 크기에 무조건 맞춤 */
             height: auto;           /* 세로 비율은 원본 유지 */
@@ -67,13 +68,15 @@
     </div>
     
     <div class="container">
-        <div class="card"><h2>👑 GOLDEN BOOT</h2><img src="{{LINK_GB}}" alt="득점왕"></div>
-        <div class="card"><h2>🥇 1부리그</h2><img src="{{LINK_1ST}}" alt="1부 리그"></div>
-        <div class="card"><h2>🥈 2부리그</h2><img src="{{LINK_2ND}}" alt="2부 리그"></div>
-        <div class="card"><h2>🏅 FA컵 토너먼트</h2><img src="{{LINK_FA}}" alt="FA컵"></div>
-        <div class="card"><h2>🏆 UCL 토너먼트</h2><img src="{{LINK_UCLT}}" alt="UCL 토너"></div>
-        <div class="card"><h2>🎖 UEL 토너먼트</h2><img src="{{LINK_UELT}}" alt="UEL 토너"></div>
-        <div class="card"><h2>🌟 UCL 그룹스테이지</h2><img src="{{LINK_UCLG}}" alt="UCL 조별"></div>
+        <div class="card"><h2>👑 GOLDEN BOOT</h2><img src="{{LINK_GB}}" alt="득점왕" loading="lazy"></div>
+        <div class="card"><h2>🎯 PLAYMAKER</h2><img src="{{LINK_PM}}" alt="플레이메이커" loading="lazy"></div>
+        
+        <div class="card"><h2>🥇 1부리그</h2><img src="{{LINK_1ST}}" alt="1부 리그" loading="lazy"></div>
+        <div class="card"><h2>🥈 2부리그</h2><img src="{{LINK_2ND}}" alt="2부 리그" loading="lazy"></div>
+        <div class="card"><h2>🏅 FA컵 토너먼트</h2><img src="{{LINK_FA}}" alt="FA컵" loading="lazy"></div>
+        <div class="card"><h2>🏆 UCL 토너먼트</h2><img src="{{LINK_UCLT}}" alt="UCL 토너" loading="lazy"></div>
+        <div class="card"><h2>🎖 UEL 토너먼트</h2><img src="{{LINK_UELT}}" alt="UEL 토너" loading="lazy"></div>
+        <div class="card"><h2>🌟 UCL 그룹스테이지</h2><img src="{{LINK_UCLG}}" alt="UCL 조별" loading="lazy"></div>
     </div>
     
     <footer>
