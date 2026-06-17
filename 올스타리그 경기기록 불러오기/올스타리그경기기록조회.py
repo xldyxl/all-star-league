@@ -1,8 +1,11 @@
 import requests
 import pandas as pd
 import time
+import os  # ✅ 알잘딱깔센: 경로 설정을 위해 os 모듈 추가
 
+# ==========================================
 # 1. 설정
+# ==========================================
 api_key = "live_f4551344020f5d8e5aa2e29c8fea68b1bf0d4ed1c4a60f2b2f071f78b4e3b165efe8d04e6d233bd35cf2fabdeb93fb0d"
 headers = {"x-nxopen-api-key": api_key}
 
@@ -15,16 +18,23 @@ league_players = [
     "콩콩콩룔"
 ]
 
-# 💡 수정된 부분: 2026년 4월 25일 오전 3시 정각
-TARGET_START_DATETIME = "2026-06-09T16:41:40"
+# 💡 수정된 부분: 2026년 6월 9일 오후 4시 41분 40초
+TARGET_START_DATETIME = "2026-05-27T10:59:01"
+
+# ✅ 요청하신 저장 경로 및 파일명 설정
+SAVE_DIR = r"C:\Users\원영이\Desktop\ATL AUTO"
+SAVE_FILENAME = "API데이터 경기 및 득점 검수.csv"
+FULL_SAVE_PATH = os.path.join(SAVE_DIR, SAVE_FILENAME)
 
 def get_ouid(nickname):
     url = f"https://open.api.nexon.com/fconline/v1/id?nickname={nickname}"
     res = requests.get(url, headers=headers)
     return res.json().get('ouid') if res.status_code == 200 else None
 
-# 1. 16명의 OUID 매핑
-print("🔍 리그 참가자 16명의 OUID 정보 확인 중...")
+# ------------------------------------------
+# 1. 리그 참가자의 OUID 매핑
+# ------------------------------------------
+print("🔍 리그 참가자들의 OUID 정보 확인 중...")
 player_map = {}
 for p in league_players:
     ouid = get_ouid(p)
@@ -38,7 +48,9 @@ match_results = []
 
 print(f"\n✅ 확인된 참가자: {len(player_map)}명. 경기 기록 수집 시작...")
 
+# ------------------------------------------
 # 2. 각 유저별 경기 ID 수집
+# ------------------------------------------
 for name, ouid in player_map.items():
     print(f"📊 {name}님의 최근 '클래식 1on1(40)' 기록 조회 중...")
     offset = 0
@@ -51,7 +63,9 @@ for name, ouid in player_map.items():
         offset += 100
         time.sleep(0.05)
 
+# ------------------------------------------
 # 3. 리그 매치 상세 분석
+# ------------------------------------------
 print(f"\n🚀 총 {len(all_league_matches)}개의 경기 중 리그 내전 선별 및 데이터 추출 시작...")
 
 for i, m_id in enumerate(all_league_matches):
@@ -60,19 +74,22 @@ for i, m_id in enumerate(all_league_matches):
         
     time.sleep(0.1) # 서버 차단 방지용 안전장치
     
-    d_res = requests.get(f"https://open.api.nexon.com/fconline/v1/match-detail?matchid={m_id}", headers=headers)
-    
-    if d_res.status_code == 429:
-        print("⏳ API 요청 한도 도달! 5초간 휴식합니다...")
-        time.sleep(5)
-        continue
-    elif d_res.status_code != 200: 
+    # ✅ 알잘딱깔센: 429 제한 걸렸을 때 데이터(득점 기록)가 누락되지 않도록 재시도 로직 적용
+    while True:
+        d_res = requests.get(f"https://open.api.nexon.com/fconline/v1/match-detail?matchid={m_id}", headers=headers)
+        if d_res.status_code == 429:
+            print("⏳ API 요청 한도 도달! 5초간 휴식 후 이 경기를 재시도합니다...")
+            time.sleep(5)
+            continue
+        break
+        
+    if d_res.status_code != 200: 
         continue
     
     data = d_res.json()
     m_date_raw = data.get('matchDate', '') 
     
-    # 💡 여기서 4월 26일 새벽 3시 이전 경기들을 걸러냅니다.
+    # 기준 시간 이전 경기 필터링
     if m_date_raw < TARGET_START_DATETIME: continue
     
     m_datetime_pretty = m_date_raw.replace('T', ' ')
@@ -106,10 +123,17 @@ for i, m_id in enumerate(all_league_matches):
             '득점명단': ", ".join(scorers)
         })
 
+# ------------------------------------------
 # 4. 저장 및 정렬
+# ------------------------------------------
 df = pd.DataFrame(match_results)
 if not df.empty:
     df = df.sort_values(by='일시', ascending=False)
+
+# ✅ 바탕화면 폴더가 없을 경우 자동 생성
+os.makedirs(SAVE_DIR, exist_ok=True)
     
-df.to_csv("AllStar_League_Match_Verify_Latest.csv", index=False, encoding="utf-8-sig")
+# ✅ 지정된 경로 및 파일명으로 최종 저장
+df.to_csv(FULL_SAVE_PATH, index=False, encoding="utf-8-sig")
 print(f"\n🎉 검증 데이터 저장 완료! (기준: {TARGET_START_DATETIME} 이후)")
+print(f"📍 저장 위치: {FULL_SAVE_PATH}")
