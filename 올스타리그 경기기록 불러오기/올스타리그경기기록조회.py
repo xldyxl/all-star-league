@@ -19,7 +19,7 @@ league_players = [
 ]
 
 # 💡 수정된 부분: 2026년 6월 9일 오후 4시 41분 40초
-TARGET_START_DATETIME = "2026-05-27T10:59:01"
+TARGET_START_DATETIME = "2026-06-18T10:26:00"
 
 # ✅ 요청하신 저장 경로 및 파일명 설정
 SAVE_DIR = r"C:\Users\원영이\Desktop\ATL AUTO"
