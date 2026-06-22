@@ -120,7 +120,7 @@ for i, m_id in enumerate(all_league_matches):
             '일시': m_datetime_pretty,
             '홈': p1_name,
             '어웨이': p2_name,
-            '스코어': f"{score1}:{score2}",
+            '스코어': f"{score1}_{score2}",
             '홈결과': result1,
             '도움명단': ", ".join(assisters)
         })
