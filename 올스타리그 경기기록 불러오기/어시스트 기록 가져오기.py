@@ -15,7 +15,7 @@ league_players = [
     "0708ManUtd", "Special블루", "은안",
     "ZD장인흥미니7", "Angel코레아", "Gucci박장군",
     "FT난테", "강해린의무회전킥", "kingdom21", "Gucci와퍼",
-    "콩콩콩룔"
+    "콩콩콩룔", "Gucci제비"
 ]
 
 # 기준 일시
