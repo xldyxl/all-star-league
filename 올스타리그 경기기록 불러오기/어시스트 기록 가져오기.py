@@ -10,12 +10,20 @@ api_key = "live_f4551344020f5d8e5aa2e29c8fea68b1bf0d4ed1c4a60f2b2f071f78b4e3b165
 headers = {"x-nxopen-api-key": api_key}
 
 league_players = [
-    "UNIT", "검정소", "ZD장인지참치",
-    "아들러", "유표", "Voor",
-    "0708ManUtd", "Special블루", "은안",
-    "ZD장인흥미니7", "Angel코레아", "Gucci박장군",
-    "FT난테", "강해린의무회전킥", "kingdom21", "Gucci와퍼",
-    "콩콩콩룔", "Gucci제비"
+    "UNIT",
+    "Gucci차붐",
+    "은안",
+    "마응",
+    "kingdom21",
+    "왕두",
+    "Angel코레아",
+    "Gucci와퍼",
+    "Special블루",
+    "콩콩콩룔",
+    "Voor",
+    "운장",
+    "검정소",
+    "방덕"
 ]
 
 # 기준 일시
