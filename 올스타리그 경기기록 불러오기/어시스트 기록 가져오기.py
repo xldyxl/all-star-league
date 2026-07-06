@@ -10,24 +10,25 @@ api_key = "live_f4551344020f5d8e5aa2e29c8fea68b1bf0d4ed1c4a60f2b2f071f78b4e3b165
 headers = {"x-nxopen-api-key": api_key}
 
 league_players = [
-    "UNIT",
-    "Gucci차붐",
-    "은안",
-    "마응",
-    "kingdom21",
-    "왕두",
-    "Angel코레아",
-    "Gucci와퍼",
     "Special블루",
     "콩콩콩룔",
     "Voor",
     "운장",
     "검정소",
-    "방덕"
+    "방덕",
+    "UNIT",
+    "Gucci차붐",
+    "kingdom21",
+    "왕두",
+    "앙쿠",
+    "Gucci와퍼",
+    "비주류중독",
+    "경남FC가즈아",
+    "스페인에서왔어용",
+    "은안"
 ]
 
-# 기준 일시
-TARGET_START_DATETIME = "2026-06-18T10:26:00"
+TARGET_START_DATETIME = "2026-07-06T00:00:00"
 
 # ✅ 요청하신 저장 경로 및 파일명 설정
 SAVE_DIR = r"C:\Users\원영이\Desktop\ATL AUTO"
