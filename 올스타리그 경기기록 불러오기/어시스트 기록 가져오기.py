@@ -13,7 +13,7 @@ league_players = [
     "Special블루",
     "콩콩콩룔",
     "Voor",
-    "운장",
+    "익덕",
     "검정소",
     "방덕",
     "UNIT",
