@@ -9,7 +9,7 @@ from urllib.parse import quote  # 한글 닉네임 인코딩을 위한 모듈
 API_KEY = "live_f4551344020f5d8e5aa2e29c8fea68b1cc76b722b41becd6437c639aef430e52efe8d04e6d233bd35cf2fabdeb93fb0d"
 
 # 여기에 본인의 실제 게임 내 닉네임을 정확히 입력하세요.
-NICKNAME = "진짜왜이러세요"  
+NICKNAME = "UNIT"  
 
 HEADERS = {
     "x-nxopen-api-key": API_KEY
