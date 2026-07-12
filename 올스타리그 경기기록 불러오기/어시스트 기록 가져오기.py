@@ -28,7 +28,7 @@ league_players = [
     "은안"
 ]
 
-TARGET_START_DATETIME = "2026-07-10T14:44:23"
+TARGET_START_DATETIME = "2026-07-12T11:20:43"
 
 # ✅ 요청하신 저장 경로 및 파일명 설정
 SAVE_DIR = r"C:\Users\원영이\Desktop\ATL AUTO"
