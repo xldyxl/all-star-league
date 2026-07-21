@@ -28,7 +28,7 @@ league_players = [
     "은안"
 ]
 
-TARGET_START_DATETIME = "2026-07-12T15:41:58"
+TARGET_START_DATETIME = "2026-07-19T13:49:59"
 
 # ✅ 2개의 출력 파일을 위한 저장 경로 및 파일명 설정
 SAVE_DIR = r"C:\Users\원영이\Desktop\ATL AUTO"
