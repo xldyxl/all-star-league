@@ -10,7 +10,7 @@ api_key = "live_f4551344020f5d8e5aa2e29c8fea68b1bf0d4ed1c4a60f2b2f071f78b4e3b165
 headers = {"x-nxopen-api-key": api_key}
 
 league_players = [
-    "Voor",
+"Voor",
 "방덕",
 "운장",
 "왕두",
@@ -22,7 +22,7 @@ league_players = [
 "콩콩콩룔",
 "앙쿠",
 "Gucci와퍼",
-"경남FC가즈아 ",
+"경남FC가즈아",
 "한국산레반",
 "여수가스",
 "오스트리아",
