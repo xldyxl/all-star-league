@@ -79,23 +79,14 @@ def update_html(urls):
     print("🌐 index.html 갱신 완료!")
 
 def git_push():
-    print("🚚 GitHub 상태 확인 및 전송 중...")
+    print("🚚 GitHub 전송 중 (매번 강제 업로드)...")
     try:
-        # 1. 변경된 파일이 있는지 확인 (git status --porcelain)
-        # 결과가 비어있으면 변경 사항이 없는 것임
-        status_check = subprocess.run(
-            ["git", "status", "--porcelain"], 
-            capture_output=True, text=True, cwd=BASE_DIR
-        )
-        
-        if not status_check.stdout.strip():
-            print("ℹ️ 변경된 데이터가 없습니다. (최신 상태 유지 중) GitHub 푸시를 건너뜁니다.")
-            return
-
-        # 2. 변경 사항이 있을 때만 동작
+        # 변경 사항 여부와 관계없이 무조건 추가 및 커밋 진행
         subprocess.run(["git", "add", "."], check=True, cwd=BASE_DIR)
         msg = f"Optimize: {time.strftime('%H:%M:%S')}"
-        subprocess.run(["git", "commit", "-m", msg], check=True, cwd=BASE_DIR)
+        
+        # --allow-empty 옵션을 사용하여 변경된 파일이 없어도 빈 커밋을 생성함
+        subprocess.run(["git", "commit", "--allow-empty", "-m", msg], check=True, cwd=BASE_DIR)
         subprocess.run(["git", "push", "origin", "main"], check=True, cwd=BASE_DIR)
         print("🚀 GitHub 업데이트 성공!")
         
