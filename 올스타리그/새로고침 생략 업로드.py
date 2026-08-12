@@ -48,28 +48,32 @@ def upload_to_imgbb(image_path):
     return None
 
 def update_html(urls):
-    t_path = os.path.join(BASE_DIR, "template.html")
-    i_path = os.path.join(BASE_DIR, "index.html")
+    # HTML 파일들이 있는 실제 폴더 경로를 직접 입력하세요.
+    # (예시 경로입니다. 실제 template.html이 있는 위치로 수정하세요)
+    HTML_DIR = r"C:\Users\원영이\Desktop\파이썬 코딩" 
+    
+    t_path = os.path.join(HTML_DIR, "template.html")
+    i_path = os.path.join(HTML_DIR, "index.html")
     
     if not os.path.exists(t_path): 
-        print("⚠️ template.html 파일을 찾을 수 없습니다!")
+        print(f"⚠️ {t_path} 파일을 찾을 수 없습니다!") # 경로까지 출력하도록 수정
         return
 
     with open(t_path, "r", encoding="utf-8") as f:
         content = f.read()
 
     mapping = {
-            "{{LINK_1ST}}": "CopyRangeAsImage_1st_U42",
-            "{{LINK_2ND}}": "CopyRangeAsImage_2nd_U42",
-            "{{LINK_3RD}}": "CopyRangeAsImage_3rd_U42",
-            "{{LINK_UCLG}}": "CopyRangeAsImage_UCLGROUP_AO25",
-            "{{LINK_UCLT}}": "CopyRangeAsImage_UCLT_CM51",
-            "{{LINK_UELT}}": "CopyRangeAsImage_UELT_CM51",
-            "{{LINK_FA1}}": "CopyRangeAsImage_FA1_CM51",
-            "{{LINK_FA2}}": "CopyRangeAsImage_FA2_CM51",
-            "{{LINK_GB}}": "CopyRangeAsImage_GOLDENBOOT_HE127",
-            "{{LINK_PM}}": "CopyRangeAsImage_PLAYMAKER_HE127"
-        }
+        "{{LINK_1ST}}": "CopyRangeAsImage_1st_U42",
+        "{{LINK_2ND}}": "CopyRangeAsImage_2nd_U42",
+        "{{LINK_3RD}}": "CopyRangeAsImage_3rd_U42",
+        "{{LINK_UCLG}}": "CopyRangeAsImage_UCLGROUP_AO25",
+        "{{LINK_UCLT}}": "CopyRangeAsImage_UCLT_CM51",
+        "{{LINK_UELT}}": "CopyRangeAsImage_UELT_CM51",
+        "{{LINK_FA1}}": "CopyRangeAsImage_FA1_CM51",
+        "{{LINK_FA2}}": "CopyRangeAsImage_FA2_CM51",
+        "{{LINK_GB}}": "CopyRangeAsImage_GOLDENBOOT_HE127",
+        "{{LINK_PM}}": "CopyRangeAsImage_PLAYMAKER_HE127"
+    }
     
     for tag, m_name in mapping.items():
         content = content.replace(tag, urls.get(m_name, ""))
