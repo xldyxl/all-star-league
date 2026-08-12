@@ -12,7 +12,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MACRO_LIST = {
     "CopyRangeAsImage_1st_U42": "1st.jpg",
     "CopyRangeAsImage_2nd_U42": "2nd.jpg",
-    "CopyRangeAsImage_FACUP_CM51": "fa.jpg",
+    "CopyRangeAsImage_3rd_U42": "3rd.jpg",
+    "CopyRangeAsImage_FA1_CM51": "fa1.jpg",
+    "CopyRangeAsImage_FA2_CM51": "fa2.jpg",
     "CopyRangeAsImage_UCLGROUP_AO25": "uclg.jpg",
     "CopyRangeAsImage_UCLT_CM51": "uclt.jpg",
     "CopyRangeAsImage_UELT_CM51": "uelt.jpg",
@@ -57,15 +59,17 @@ def update_html(urls):
         content = f.read()
 
     mapping = {
-        "{{LINK_1ST}}": "CopyRangeAsImage_1st_U42",
-        "{{LINK_2ND}}": "CopyRangeAsImage_2nd_U42",
-        "{{LINK_UCLG}}": "CopyRangeAsImage_UCLGROUP_AO25",
-        "{{LINK_UCLT}}": "CopyRangeAsImage_UCLT_CM51",
-        "{{LINK_UELT}}": "CopyRangeAsImage_UELT_CM51",
-        "{{LINK_FA}}": "CopyRangeAsImage_FACUP_CM51",
-        "{{LINK_GB}}": "CopyRangeAsImage_GOLDENBOOT_HE127",
-        "{{LINK_PM}}": "CopyRangeAsImage_PLAYMAKER_HE127" # ✅ 8번째 HTML 매핑 추가
-    }
+            "{{LINK_1ST}}": "CopyRangeAsImage_1st_U42",
+            "{{LINK_2ND}}": "CopyRangeAsImage_2nd_U42",
+            "{{LINK_3RD}}": "CopyRangeAsImage_3rd_U42",
+            "{{LINK_UCLG}}": "CopyRangeAsImage_UCLGROUP_AO25",
+            "{{LINK_UCLT}}": "CopyRangeAsImage_UCLT_CM51",
+            "{{LINK_UELT}}": "CopyRangeAsImage_UELT_CM51",
+            "{{LINK_FA1}}": "CopyRangeAsImage_FA1_CM51",
+            "{{LINK_FA2}}": "CopyRangeAsImage_FA2_CM51",
+            "{{LINK_GB}}": "CopyRangeAsImage_GOLDENBOOT_HE127",
+            "{{LINK_PM}}": "CopyRangeAsImage_PLAYMAKER_HE127"
+        }
     
     for tag, m_name in mapping.items():
         content = content.replace(tag, urls.get(m_name, ""))
