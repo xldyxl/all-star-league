@@ -120,7 +120,7 @@ def main():
             if img:
                 # 🌈 [핵심] JPG 저장을 위해 RGB 모드로 변환 후 압축 저장
                 img = img.convert("RGB")
-                img.save(save_path, "JPEG", quality=100) # 화질 100% 수준으로 압축 (용량 대폭 감소)
+                img.save(save_path, "JPEG", quality=70) # 화질 70% 수준으로 압축 (용량 대폭 감소)
                 
                 url = upload_to_imgbb(save_path)
                 if url:
