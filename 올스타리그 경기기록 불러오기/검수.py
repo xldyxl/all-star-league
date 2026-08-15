@@ -10,30 +10,14 @@ api_key = "live_f4551344020f5d8e5aa2e29c8fea68b1bf0d4ed1c4a60f2b2f071f78b4e3b165
 headers = {"x-nxopen-api-key": api_key}
 
 league_players = [
-"Voor",
-"방덕",
-"운장",
-"왕두",
-"검정소",
-"은안",
-"Gucci차붐",
-"UNIT",
-"Special블루",
-"콩콩콩룔",
-"앙쿠",
-"Gucci와퍼",
-"경남FC가즈아",
-"한국산레반",
-"여수가스",
-"오스트리아",
-"조구1세",
-"개포동덕배",
-"겐지간지",
-"SOUL반달곰",
-"Legend독수리",
-"호야국2인",
-"ZD카카",
-"ShangHaiPortFC"
+"Voor","방덕","운장",
+"왕두","검정소","은안",
+"Gucci차붐","UNIT","Special블루",
+"콩콩콩룔","앙쿠","Gucci와퍼",
+"경남FC가즈아","한국산레반","여수가스",
+"오스트리아","조구1세","개포동덕배",
+"겐지간지","SOUL반달곰","Legend독수리",
+"호야국2인","ZD카카","ShangHaiPortFC"
 ]
 
 TARGET_START_DATETIME = "2026-08-13T13:17:15"
