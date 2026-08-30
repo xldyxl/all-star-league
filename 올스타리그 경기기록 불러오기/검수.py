@@ -17,7 +17,7 @@ league_players = [
 "경남FC가즈아","한국산레반","여수가스",
 "오스트리아","조구1세","개포동덕배",
 "겐지간지","SOUL반달곰","Legend독수리",
-"호야국2인","ZD카카","ShangHaiPortFC"
+"호야국2인","ZD카카","ShangHaiPortFC","레알황족"
 ]
 
 TARGET_START_DATETIME = "2026-08-18T15:08:48"
