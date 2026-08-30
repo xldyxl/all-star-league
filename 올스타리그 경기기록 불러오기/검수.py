@@ -20,7 +20,7 @@ league_players = [
 "호야국2인","ZD카카","ShangHaiPortFC","레알황족"
 ]
 
-TARGET_START_DATETIME = "2026-08-18T15:08:48"
+TARGET_START_DATETIME = "2026-08-30T10:58:23"
 
 # ✅ 1개의 엑셀 파일 저장을 위한 경로 및 파일명 설정 (.xlsx 로 변경)
 SAVE_DIR = r"C:\Users\원영이\Desktop\ATL AUTO"
