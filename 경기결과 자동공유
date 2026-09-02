@@ -10,9 +10,9 @@ IMGBB_API_KEY = "ae84f8a45971fc994c3a2ce9aa29c8f6"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 MACRO_LIST = {
-    "CopyRangeAsImage_1st_U42": "1st.jpg",
-    "CopyRangeAsImage_2nd_U42": "2nd.jpg",
-    "CopyRangeAsImage_3rd_U42": "3rd.jpg",
+    "CopyRangeAsImage_1st_U49": "1st.jpg",
+    "CopyRangeAsImage_2nd_U49": "2nd.jpg",
+    "CopyRangeAsImage_3rd_U49": "3rd.jpg",
     "CopyRangeAsImage_FA1_CM51": "fa1.jpg",
     "CopyRangeAsImage_FA2_CM51": "fa2.jpg",
     "CopyRangeAsImage_UCLGROUP_AO25": "uclg.jpg",
@@ -59,9 +59,9 @@ def update_html(urls):
         content = f.read()
 
     mapping = {
-        "{{LINK_1ST}}": "CopyRangeAsImage_1st_U42",
-        "{{LINK_2ND}}": "CopyRangeAsImage_2nd_U42",
-        "{{LINK_3RD}}": "CopyRangeAsImage_3rd_U42",
+        "{{LINK_1ST}}": "CopyRangeAsImage_1st_U49",
+        "{{LINK_2ND}}": "CopyRangeAsImage_2nd_U49",
+        "{{LINK_3RD}}": "CopyRangeAsImage_3rd_U49",
         "{{LINK_UCLG}}": "CopyRangeAsImage_UCLGROUP_AO25",
         "{{LINK_UCLT}}": "CopyRangeAsImage_UCLT_CM51",
         "{{LINK_UELT}}": "CopyRangeAsImage_UELT_CM51",
