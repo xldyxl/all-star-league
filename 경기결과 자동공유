@@ -18,7 +18,7 @@ MACRO_LIST = {
     "CopyRangeAsImage_UCLGROUP_AO25": "uclg.jpg",
     "CopyRangeAsImage_UCLT_CM51": "uclt.jpg",
     "CopyRangeAsImage_UELT_CM51": "uelt.jpg",
-    "CopyRangeAsImage_UECLT_CM51": "uelt.jpg",
+    "CopyRangeAsImage_UECLT_CM51": "ueclt.jpg",
     "CopyRangeAsImage_GOLDENBOOT_HF120": "gb.jpg",
     "CopyRangeAsImage_PLAYMAKER_HF120": "pm.jpg",
 }
