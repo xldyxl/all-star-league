@@ -1,6 +1,6 @@
 import win32com.client
 import os, time, requests, base64, subprocess, ctypes
-from PIL import ImageGrab, Image, ImageStat # ✅ ImageStat 추가됨
+from PIL import ImageGrab, Image, ImageStat
 
 # ==========================================
 # 1. 환경 설정
@@ -23,10 +23,6 @@ MACRO_LIST = {
     "CopyRangeAsImage_PLAYMAKER_HF120": "pm.jpg",
 }
 
-# ==========================================
-# 2. 기능 함수
-# ==========================================
-
 def clear_clipboard():
     try:
         ctypes.windll.user32.OpenClipboard(None)
@@ -35,15 +31,23 @@ def clear_clipboard():
     except Exception as e: 
         print(f"⚠️ 클립보드 초기화 실패: {e}")
 
-# ✅ 새로 추가된 함수: 이미지가 텅 빈 하얀색인지 검사
+# ✅ 스마트 렌더링 오류 감지 (이미지 하단 영역의 색상 변화율 검사)
 def is_blank_image(img):
     try:
-        stat = ImageStat.Stat(img)
-        # 이미지의 R, G, B 색상 편차가 거의 없으면(단색이면) 빈 화면으로 간주
-        if sum(stat.stddev) < 5: 
+        w, h = img.size
+        # 하얀 박스 버그는 항상 이미지 하단 60% 영역에 발생함
+        bottom_crop = img.crop((0, int(h * 0.4), w, h))
+        stat = ImageStat.Stat(bottom_crop)
+        
+        # 하단 영역 픽셀의 색상 표준편차 평균 구하기
+        stddev_avg = sum(stat.stddev) / len(stat.stddev)
+        
+        # 실제 데이터/테이블이 있다면 글자나 테두리로 인해 표준편차가 높음.
+        # 렌더링 실패로 완전히 텅 빈 단색 면적일 경우 표준편차가 3 미만으로 떨어짐.
+        if stddev_avg < 3.0:
             return True
         return False
-    except:
+    except Exception as e:
         return False
 
 def upload_to_imgbb(image_path):
@@ -106,8 +110,7 @@ def main():
     print("🚀 [초고속 모드] 자동 중계 시스템 가동!")
     excel = win32com.client.Dispatch("Excel.Application")
     excel.Visible = True
-    # 엑셀 창을 강제로 활성화하여 렌더링 오류 방지
-    excel.WindowState = -4143 # xlNormal
+    excel.WindowState = -4143
     
     wb = None
     try:
@@ -123,7 +126,6 @@ def main():
             save_path = os.path.join(BASE_DIR, f_name)
             final_img = None
             
-            # ✅ 최대 5번까지 재시도하는 강력한 캡처 루프
             MAX_RETRIES = 5
             for attempt in range(1, MAX_RETRIES + 1):
                 clear_clipboard()
@@ -133,27 +135,25 @@ def main():
                 except Exception as e:
                     print(f"   ↳ 매크로 실행 오류: {e}")
                     
-                time.sleep(1.5) # 클립보드에 들어갈 시간 넉넉히 부여
+                time.sleep(1.8) # 캡처 완료 대기시간 살짝 확대
                 
                 temp_img = ImageGrab.grabclipboard()
                 
                 if temp_img:
-                    temp_img = temp_img.convert("RGB")
+                    temp_img = temp_img.convert("RGBA").convert("RGB")
                     
-                    # 이미지가 하얀색 빈 화면인지 확인
                     if is_blank_image(temp_img):
-                        print(f"   ⚠️ 하얀색 빈 화면 감지됨! 재시도 중... ({attempt}/{MAX_RETRIES})")
-                        time.sleep(2) # 엑셀이 화면을 그릴 시간을 줌
+                        print(f"   ⚠️ 엑셀 렌더링 오류(하단 단색 빈 상증) 감지! 재시도... ({attempt}/{MAX_RETRIES})")
+                        time.sleep(2)
                         continue
                     else:
                         final_img = temp_img
-                        print("   ✅ 정상적으로 이미지 캡처 성공!")
-                        break # 성공했으므로 재시도 루프 탈출
+                        print("   ✅ 정상 이미지 캡처 성공!")
+                        break
                 else:
-                    print(f"   ⚠️ 클립보드에 이미지 없음! 재시도 중... ({attempt}/{MAX_RETRIES})")
+                    print(f"   ⚠️ 클립보드에 이미지 없음! 재시도... ({attempt}/{MAX_RETRIES})")
                     time.sleep(2)
             
-            # 루프 종료 후 정상 이미지가 확보되었다면 저장 및 업로드
             if final_img:
                 final_img.save(save_path, "JPEG", quality=70)
                 url = upload_to_imgbb(save_path)
@@ -161,14 +161,14 @@ def main():
                     final_urls[m_name] = url
                     print(f"   🔗 주소: {url}")
             else:
-                print(f"❌ {m_name} 최종 캡처 실패 (빈 화면 누적)")
+                print(f"❌ {m_name} 최종 캡처 실패")
         
         if final_urls:
             update_html(final_urls)
             git_push()
             
         wb.Save()
-        print("\n🟢 모든 작업이 완료되었습니다. (엑셀 창을 그대로 유지합니다)")
+        print("\n🟢 모든 작업이 완료되었습니다.")
         
     except Exception as e:
         print(f"❌ 치명적 오류 발생: {e}")
