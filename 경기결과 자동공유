@@ -1,6 +1,6 @@
 import win32com.client
 import os, time, requests, base64, subprocess, ctypes
-from PIL import ImageGrab, Image
+from PIL import ImageGrab, Image, ImageStat # ✅ ImageStat 추가됨
 
 # ==========================================
 # 1. 환경 설정
@@ -20,7 +20,7 @@ MACRO_LIST = {
     "CopyRangeAsImage_UELT_CM51": "uelt.jpg",
     "CopyRangeAsImage_UECLT_CM51": "uelt.jpg",
     "CopyRangeAsImage_GOLDENBOOT_HF120": "gb.jpg",
-    "CopyRangeAsImage_PLAYMAKER_HF120": "pm.jpg", # ✅ 8번째 시트 (Playmaker) 추가
+    "CopyRangeAsImage_PLAYMAKER_HF120": "pm.jpg",
 }
 
 # ==========================================
@@ -34,6 +34,17 @@ def clear_clipboard():
         ctypes.windll.user32.CloseClipboard()
     except Exception as e: 
         print(f"⚠️ 클립보드 초기화 실패: {e}")
+
+# ✅ 새로 추가된 함수: 이미지가 텅 빈 하얀색인지 검사
+def is_blank_image(img):
+    try:
+        stat = ImageStat.Stat(img)
+        # 이미지의 R, G, B 색상 편차가 거의 없으면(단색이면) 빈 화면으로 간주
+        if sum(stat.stddev) < 5: 
+            return True
+        return False
+    except:
+        return False
 
 def upload_to_imgbb(image_path):
     url = "https://api.imgbb.com/1/upload"
@@ -83,15 +94,11 @@ def update_html(urls):
 def git_push():
     print("🚚 GitHub 전송 중 (매번 강제 업로드)...")
     try:
-        # 변경 사항 여부와 관계없이 무조건 추가 및 커밋 진행
         subprocess.run(["git", "add", "."], check=True, cwd=BASE_DIR)
         msg = f"Optimize: {time.strftime('%H:%M:%S')}"
-        
-        # --allow-empty 옵션을 사용하여 변경된 파일이 없어도 빈 커밋을 생성함
         subprocess.run(["git", "commit", "--allow-empty", "-m", msg], check=True, cwd=BASE_DIR)
         subprocess.run(["git", "push", "origin", "main"], check=True, cwd=BASE_DIR)
         print("🚀 GitHub 업데이트 성공!")
-        
     except Exception as e: 
         print(f"⚠️ GitHub 푸시 중 문제 발생: {e}")
 
@@ -99,50 +106,72 @@ def main():
     print("🚀 [초고속 모드] 자동 중계 시스템 가동!")
     excel = win32com.client.Dispatch("Excel.Application")
     excel.Visible = True
+    # 엑셀 창을 강제로 활성화하여 렌더링 오류 방지
+    excel.WindowState = -4143 # xlNormal
     
     wb = None
     try:
         wb = excel.Workbooks.Open(os.path.abspath(EXCEL_FILE_PATH))
         
-        # ✅ 새로고침 10초 -> 30초 변경
         print("📥 새로고침 중 (30초)...")
         wb.RefreshAll()
         time.sleep(30) 
         
         final_urls = {}
         for m_name, f_name in MACRO_LIST.items():
-            print(f"📸 {m_name} 캡처 및 최적화 중...")
-            clear_clipboard()
-            excel.Run(m_name)
-            time.sleep(1.2)
-            
+            print(f"\n📸 [{m_name}] 캡처 진행 중...")
             save_path = os.path.join(BASE_DIR, f_name)
-            img = ImageGrab.grabclipboard()
+            final_img = None
             
-            if img:
-                # 🌈 [핵심] JPG 저장을 위해 RGB 모드로 변환 후 압축 저장
-                img = img.convert("RGB")
-                img.save(save_path, "JPEG", quality=70) # 화질 70% 수준으로 압축 (용량 대폭 감소)
+            # ✅ 최대 5번까지 재시도하는 강력한 캡처 루프
+            MAX_RETRIES = 5
+            for attempt in range(1, MAX_RETRIES + 1):
+                clear_clipboard()
                 
+                try:
+                    excel.Run(m_name)
+                except Exception as e:
+                    print(f"   ↳ 매크로 실행 오류: {e}")
+                    
+                time.sleep(1.5) # 클립보드에 들어갈 시간 넉넉히 부여
+                
+                temp_img = ImageGrab.grabclipboard()
+                
+                if temp_img:
+                    temp_img = temp_img.convert("RGB")
+                    
+                    # 이미지가 하얀색 빈 화면인지 확인
+                    if is_blank_image(temp_img):
+                        print(f"   ⚠️ 하얀색 빈 화면 감지됨! 재시도 중... ({attempt}/{MAX_RETRIES})")
+                        time.sleep(2) # 엑셀이 화면을 그릴 시간을 줌
+                        continue
+                    else:
+                        final_img = temp_img
+                        print("   ✅ 정상적으로 이미지 캡처 성공!")
+                        break # 성공했으므로 재시도 루프 탈출
+                else:
+                    print(f"   ⚠️ 클립보드에 이미지 없음! 재시도 중... ({attempt}/{MAX_RETRIES})")
+                    time.sleep(2)
+            
+            # 루프 종료 후 정상 이미지가 확보되었다면 저장 및 업로드
+            if final_img:
+                final_img.save(save_path, "JPEG", quality=70)
                 url = upload_to_imgbb(save_path)
                 if url:
                     final_urls[m_name] = url
-                    print(f"✅ 주소: {url}")
+                    print(f"   🔗 주소: {url}")
             else:
-                print(f"⚠️ {m_name} 캡처 실패: 클립보드에 이미지가 없습니다.")
+                print(f"❌ {m_name} 최종 캡처 실패 (빈 화면 누적)")
         
         if final_urls:
             update_html(final_urls)
             git_push()
             
         wb.Save()
-        print("🟢 모든 작업이 완료되었습니다. (엑셀 창을 그대로 유지합니다)")
+        print("\n🟢 모든 작업이 완료되었습니다. (엑셀 창을 그대로 유지합니다)")
         
     except Exception as e:
         print(f"❌ 치명적 오류 발생: {e}")
-    finally:
-        # ✅ 엑셀 자동 종료(wb.Close, excel.Quit) 코드 제거됨
-        pass
 
 if __name__ == "__main__":
     main()
