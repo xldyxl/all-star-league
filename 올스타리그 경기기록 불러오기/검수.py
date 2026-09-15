@@ -10,37 +10,15 @@ api_key = "live_f4551344020f5d8e5aa2e29c8fea68b1bf0d4ed1c4a60f2b2f071f78b4e3b165
 headers = {"x-nxopen-api-key": api_key}
 
 league_players = [
-"Voor",
-"방덕",
-"검정소",
-"UNIT",
-"콩콩콩룔",
-"킹왕두",
-"은안",
-"아들러",
-"Special블루",
-"개포동덕배",
-"비주류중독",
-"Gucci와퍼",
-"호야국2인",
-"Gucci차붐",
-"앙쿠",
-"오스트리아",
-"겐지간지",
-"ShangHaiPortFC",
-"ZD장인지참치",
-"스페인전도사",
-"0708ManUtd",
-"셀래스틴",
-"여수가스",
-"경남FC가즈아",
-"suma수마",
-"A지냐크",
-"Legend독수리",
-"용신"
+"UNIT","Voor","검정소","방덕","은안",
+"콩콩콩룔","킹왕두","Gucci와퍼","Gucci차붐","Special블루",
+"개포동덕배","비주류중독","아들러","호야국2인","0708ManUtd",
+"A지냐크","Legend독수리","ShangHaiPortFC","suma수마","ZD장인지참치",
+"겐지간지","경남FC가즈아","셀래스틴","스페인전도사","앙쿠",
+"여수가스","오스트리아","용신"
 ]
 
-TARGET_START_DATETIME = "2026-08-30T10:58:23"
+TARGET_START_DATETIME = "2026-09-14T00:58:23"
 
 # ✅ 1개의 엑셀 파일 저장을 위한 경로 및 파일명 설정 (.xlsx 로 변경)
 SAVE_DIR = r"C:\Users\원영이\Desktop\ATL AUTO"
