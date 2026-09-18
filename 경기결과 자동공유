@@ -11,7 +11,7 @@ IMGBB_API_KEY = "ae84f8a45971fc994c3a2ce9aa29c8f6"
 
 # 🚨 여기에 ELO 랭킹용 깃허브 폴더가 있는 PC의 실제 경로를 입력하세요! (r 뒤에 따옴표 안에 작성)
 # 예시: ELO_REPO_DIR = r"C:\Users\User\Desktop\AllStar-Ranking-ELO-"
-ELO_REPO_DIR = r"여기에_ELO_폴더_경로_입력"
+ELO_REPO_DIR = r"C:\Users\원영이\Desktop\AllStar-Ranking-ELO-"
 
 MACRO_LIST = {
     "CopyRangeAsImage_1st_U49": "1st.jpg",
