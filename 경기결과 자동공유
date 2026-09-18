@@ -1,5 +1,5 @@
 import win32com.client
-import os, time, requests, base64, subprocess, ctypes
+import os, time, requests, base64, subprocess, ctypes, shutil
 from PIL import ImageGrab, Image, ImageStat
 
 # ==========================================
@@ -8,6 +8,10 @@ from PIL import ImageGrab, Image, ImageStat
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 EXCEL_FILE_PATH = os.path.join(BASE_DIR, "All-Star LEAGUE.xlsm")
 IMGBB_API_KEY = "ae84f8a45971fc994c3a2ce9aa29c8f6"
+
+# 🚨 여기에 ELO 랭킹용 깃허브 폴더가 있는 PC의 실제 경로를 입력하세요! (r 뒤에 따옴표 안에 작성)
+# 예시: ELO_REPO_DIR = r"C:\Users\User\Desktop\AllStar-Ranking-ELO-"
+ELO_REPO_DIR = r"여기에_ELO_폴더_경로_입력"
 
 MACRO_LIST = {
     "CopyRangeAsImage_1st_U49": "1st.jpg",
@@ -23,7 +27,7 @@ MACRO_LIST = {
     "CopyRangeAsImage_PLAYMAKER_HF120": "pm.jpg",
 }
 
-# 🚨 실제 랭킹 데이터가 있는 시트 이름으로 변경 완료
+# 실제 랭킹 데이터가 있는 시트 이름
 TARGET_SHEET_NAME = "랭킹(ELO)"
 
 def clear_clipboard():
@@ -97,44 +101,63 @@ def extract_ranking_data(excel, wb):
     print(f"\n📊 [{TARGET_SHEET_NAME}] 시트 데이터를 Ranking_Data.xlsx로 추출합니다...")
     try:
         source_sheet = wb.Sheets(TARGET_SHEET_NAME)
-        
-        # 새 엑셀 워크북 생성
         new_wb = excel.Workbooks.Add()
         
-        # 원본 데이터 복사 후 새 워크북에 값만 붙여넣기 (수식 제외, 순수 데이터만)
         source_sheet.UsedRange.Copy()
         new_wb.Sheets(1).Range("A1").PasteSpecial(Paste=-4163) # xlPasteValues
         
         save_path = os.path.join(BASE_DIR, "Ranking_Data.xlsx")
         
-        # 기존 랭킹 파일이 열려있거나 존재할 경우 삭제 후 저장
         if os.path.exists(save_path):
             os.remove(save_path)
             
-        # FileFormat 51은 일반 xlsx 포맷입니다.
         new_wb.SaveAs(save_path, FileFormat=51)
-        new_wb.Close(False) # 저장 후 닫기
+        new_wb.Close(False) 
         
-        # 클립보드에 남아있는 복사본 비우기
         clear_clipboard()
-        print("   ✅ Ranking_Data.xlsx 추출 및 덮어쓰기 성공!")
+        print("   ✅ 추출 완료 (임시 저장)")
+        return save_path
     except Exception as e:
         print(f"   ⚠️ 랭킹 데이터 추출 실패: {e}")
-        # 오류가 나더라도 캡처 작업은 진행될 수 있게 패스합니다.
+        return None
 
-def git_push():
-    print("\n🚚 GitHub 전송 중 (대시보드 HTML 및 Ranking_Data.xlsx 동시 업로드)...")
+# 🚀 ELO 저장소로 엑셀 복사 및 푸시하는 함수 (신규 추가)
+def git_push_elo_repo(source_excel_path):
+    print("\n🚚 [Streamlit ELO 저장소] Ranking_Data.xlsx 전송 중...")
+    if not os.path.exists(ELO_REPO_DIR) or ELO_REPO_DIR == r"여기에_ELO_폴더_경로_입력":
+        print("   ⚠️ ELO 저장소 경로가 잘못 설정되었습니다. 코드 상단의 ELO_REPO_DIR을 확인해주세요.")
+        return
+        
+    target_excel_path = os.path.join(ELO_REPO_DIR, "Ranking_Data.xlsx")
+    
+    try:
+        # 1. 파일 복사
+        shutil.copy2(source_excel_path, target_excel_path)
+        print(f"   ✅ ELO 폴더로 엑셀 복사 완료")
+        
+        # 2. 깃허브 푸시
+        subprocess.run(["git", "add", "Ranking_Data.xlsx"], check=True, cwd=ELO_REPO_DIR)
+        msg = f"Update: Ranking Data ({time.strftime('%H:%M:%S')})"
+        subprocess.run(["git", "commit", "--allow-empty", "-m", msg], check=True, cwd=ELO_REPO_DIR)
+        subprocess.run(["git", "push", "origin", "main"], check=True, cwd=ELO_REPO_DIR)
+        print("   🚀 ELO 깃허브(Streamlit) 업데이트 성공!")
+    except Exception as e:
+        print(f"   ⚠️ ELO 저장소 푸시 실패: {e}")
+
+# 🚀 기존 HTML 대시보드 저장소 푸시 함수
+def git_push_dashboard():
+    print("\n🚚 [대시보드 저장소] HTML 및 캡처 이미지 전송 중...")
     try:
         subprocess.run(["git", "add", "."], check=True, cwd=BASE_DIR)
-        msg = f"Update: Dashboard & Ranking Data ({time.strftime('%H:%M:%S')})"
+        msg = f"Update: Dashboard HTML ({time.strftime('%H:%M:%S')})"
         subprocess.run(["git", "commit", "--allow-empty", "-m", msg], check=True, cwd=BASE_DIR)
         subprocess.run(["git", "push", "origin", "main"], check=True, cwd=BASE_DIR)
-        print("🚀 GitHub 업데이트 완료! (Streamlit 랭킹 웹사이트도 곧 갱신됩니다)")
+        print("   🚀 대시보드 깃허브 업데이트 성공!")
     except Exception as e: 
-        print(f"⚠️ GitHub 푸시 중 문제 발생: {e}")
+        print(f"   ⚠️ 대시보드 푸시 실패: {e}")
 
 def main():
-    print("🚀 [초고속 모드] 자동 중계 및 랭킹 동기화 시스템 가동!")
+    print("🚀 자동 중계 및 랭킹 동기화 시스템 가동!")
     excel = win32com.client.Dispatch("Excel.Application")
     excel.Visible = True
     excel.WindowState = -4143
@@ -147,8 +170,10 @@ def main():
         wb.RefreshAll()
         time.sleep(30) 
         
-        # ✅ 새로고침이 완료된 후, 랭킹 데이터를 새 엑셀 파일로 자동 추출합니다.
-        extract_ranking_data(excel, wb)
+        # ✅ 랭킹 데이터 추출 후 Streamlit(ELO) 저장소로 푸시
+        extracted_excel_path = extract_ranking_data(excel, wb)
+        if extracted_excel_path:
+            git_push_elo_repo(extracted_excel_path)
 
         final_urls = {}
         for m_name, f_name in MACRO_LIST.items():
@@ -159,21 +184,17 @@ def main():
             MAX_RETRIES = 5
             for attempt in range(1, MAX_RETRIES + 1):
                 clear_clipboard()
-                
                 try:
                     excel.Run(m_name)
                 except Exception as e:
-                    print(f"   ↳ 매크로 실행 오류: {e}")
-                    
+                    pass
                 time.sleep(1.8)
                 
                 temp_img = ImageGrab.grabclipboard()
                 
                 if temp_img:
                     temp_img = temp_img.convert("RGBA").convert("RGB")
-                    
                     if is_blank_image(temp_img):
-                        print(f"   ⚠️ 엑셀 렌더링 오류(하단 단색 빈 상자) 감지! 재시도... ({attempt}/{MAX_RETRIES})")
                         time.sleep(2)
                         continue
                     else:
@@ -181,7 +202,6 @@ def main():
                         print("   ✅ 정상 이미지 캡처 성공!")
                         break
                 else:
-                    print(f"   ⚠️ 클립보드에 이미지 없음! 재시도... ({attempt}/{MAX_RETRIES})")
                     time.sleep(2)
             
             if final_img:
@@ -195,7 +215,8 @@ def main():
         
         if final_urls:
             update_html(final_urls)
-            git_push() 
+            # ✅ HTML 대시보드 저장소 푸시
+            git_push_dashboard() 
             
         wb.Save()
         print("\n🟢 모든 작업이 완료되었습니다.")
