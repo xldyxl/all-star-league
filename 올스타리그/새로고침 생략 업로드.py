@@ -18,6 +18,7 @@ MACRO_LIST = {
     "CopyRangeAsImage_UCLGROUP_AO25": "uclg.jpg",
     "CopyRangeAsImage_UCLT_CM51": "uclt.jpg",
     "CopyRangeAsImage_UELT_CM51": "uelt.jpg",
+    "CopyRangeAsImage_UECLT_CM51": "ueclt.jpg",
     "CopyRangeAsImage_GOLDENBOOT_HE127": "gb.jpg",
     "CopyRangeAsImage_PLAYMAKER_HE127": "pm.jpg", # ✅ 8번째 시트 (Playmaker) 추가
 }
@@ -69,6 +70,7 @@ def update_html(urls):
         "{{LINK_UCLG}}": "CopyRangeAsImage_UCLGROUP_AO25",
         "{{LINK_UCLT}}": "CopyRangeAsImage_UCLT_CM51",
         "{{LINK_UELT}}": "CopyRangeAsImage_UELT_CM51",
+        "{{LINK_UECLT}}": "CopyRangeAsImage_UECLT_CM51",
         "{{LINK_FA1}}": "CopyRangeAsImage_FA1_CM51",
         "{{LINK_FA2}}": "CopyRangeAsImage_FA2_CM51",
         "{{LINK_GB}}": "CopyRangeAsImage_GOLDENBOOT_HE127",

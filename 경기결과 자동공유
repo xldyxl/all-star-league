@@ -35,15 +35,11 @@ def clear_clipboard():
 def is_blank_image(img):
     try:
         w, h = img.size
-        # 하얀 박스 버그는 항상 이미지 하단 60% 영역에 발생함
         bottom_crop = img.crop((0, int(h * 0.4), w, h))
         stat = ImageStat.Stat(bottom_crop)
         
-        # 하단 영역 픽셀의 색상 표준편차 평균 구하기
         stddev_avg = sum(stat.stddev) / len(stat.stddev)
         
-        # 실제 데이터/테이블이 있다면 글자나 테두리로 인해 표준편차가 높음.
-        # 렌더링 실패로 완전히 텅 빈 단색 면적일 경우 표준편차가 3 미만으로 떨어짐.
         if stddev_avg < 3.0:
             return True
         return False
@@ -95,19 +91,25 @@ def update_html(urls):
         f.write(content)
     print("🌐 index.html 갱신 완료!")
 
+# 🔄 깃허브 자동 업로드 부분 (대시보드 + 랭킹 엑셀 동시 처리)
 def git_push():
-    print("🚚 GitHub 전송 중 (매번 강제 업로드)...")
+    print("🚚 GitHub 전송 중 (대시보드 HTML 및 랭킹 엑셀 파일 동시 업로드)...")
     try:
+        # 1. BASE_DIR 내의 index.html, Ranking_Data.xlsx 등 변경된 모든 파일 추가
         subprocess.run(["git", "add", "."], check=True, cwd=BASE_DIR)
-        msg = f"Optimize: {time.strftime('%H:%M:%S')}"
+        
+        # 2. 커밋 메시지에 대시보드와 랭킹 데이터가 함께 업데이트됨을 명시
+        msg = f"Update: Dashboard & Ranking Data ({time.strftime('%H:%M:%S')})"
         subprocess.run(["git", "commit", "--allow-empty", "-m", msg], check=True, cwd=BASE_DIR)
+        
+        # 3. 깃허브로 푸시
         subprocess.run(["git", "push", "origin", "main"], check=True, cwd=BASE_DIR)
-        print("🚀 GitHub 업데이트 성공!")
+        print("🚀 GitHub 업데이트 완료! (Streamlit 웹사이트 랭킹도 곧 갱신됩니다)")
     except Exception as e: 
         print(f"⚠️ GitHub 푸시 중 문제 발생: {e}")
 
 def main():
-    print("🚀 [초고속 모드] 자동 중계 시스템 가동!")
+    print("🚀 [초고속 모드] 자동 중계 및 랭킹 동기화 시스템 가동!")
     excel = win32com.client.Dispatch("Excel.Application")
     excel.Visible = True
     excel.WindowState = -4143
@@ -120,6 +122,8 @@ def main():
         wb.RefreshAll()
         time.sleep(30) 
         
+        # (만약 All-Star LEAGUE.xlsm 내부 매크로로 Ranking_Data.xlsx를 새로 뽑아내는 작업이 있다면 여기서 실행되도록 하시면 됩니다.)
+
         final_urls = {}
         for m_name, f_name in MACRO_LIST.items():
             print(f"\n📸 [{m_name}] 캡처 진행 중...")
@@ -135,7 +139,7 @@ def main():
                 except Exception as e:
                     print(f"   ↳ 매크로 실행 오류: {e}")
                     
-                time.sleep(1.8) # 캡처 완료 대기시간 살짝 확대
+                time.sleep(1.8)
                 
                 temp_img = ImageGrab.grabclipboard()
                 
@@ -143,7 +147,7 @@ def main():
                     temp_img = temp_img.convert("RGBA").convert("RGB")
                     
                     if is_blank_image(temp_img):
-                        print(f"   ⚠️ 엑셀 렌더링 오류(하단 단색 빈 상증) 감지! 재시도... ({attempt}/{MAX_RETRIES})")
+                        print(f"   ⚠️ 엑셀 렌더링 오류(하단 단색 빈 상자) 감지! 재시도... ({attempt}/{MAX_RETRIES})")
                         time.sleep(2)
                         continue
                     else:
@@ -165,7 +169,7 @@ def main():
         
         if final_urls:
             update_html(final_urls)
-            git_push()
+            git_push() # 여기서 대시보드 파일과 랭킹 엑셀이 함께 GitHub로 올라갑니다.
             
         wb.Save()
         print("\n🟢 모든 작업이 완료되었습니다.")
