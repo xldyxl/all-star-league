@@ -23,8 +23,8 @@ MACRO_LIST = {
     "CopyRangeAsImage_PLAYMAKER_HF120": "pm.jpg",
 }
 
-# 🚨 여기에 실제 랭킹 데이터가 있는 시트 이름을 입력하세요! (예: "Ranking")
-TARGET_SHEET_NAME = "여기에_시트_이름_입력"
+# 🚨 실제 랭킹 데이터가 있는 시트 이름으로 변경 완료
+TARGET_SHEET_NAME = "랭킹(ELO)"
 
 def clear_clipboard():
     try:
