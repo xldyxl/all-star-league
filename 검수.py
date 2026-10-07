@@ -18,7 +18,7 @@ league_players = [
 "여수가스","오스트리아","용신","피파왕초보구단주","syma"
 ]
 
-TARGET_START_DATETIME = "2026-09-29T04:33:11"
+TARGET_START_DATETIME = "2026-10-07T00:21:15"
 
 # ✅ 1개의 엑셀 파일 저장을 위한 경로 및 파일명 설정 (.xlsx 로 변경)
 SAVE_DIR = r"C:\Users\원영이\Desktop\ATL AUTO"
