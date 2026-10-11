@@ -10,7 +10,6 @@ EXCEL_FILE_PATH = os.path.join(BASE_DIR, "All-Star LEAGUE.xlsm")
 IMGBB_API_KEY = "ae84f8a45971fc994c3a2ce9aa29c8f6"
 
 # 🚨 여기에 ELO 랭킹용 깃허브 폴더가 있는 PC의 실제 경로를 입력하세요! (r 뒤에 따옴표 안에 작성)
-# 예시: ELO_REPO_DIR = r"C:\Users\User\Desktop\AllStar-Ranking-ELO-"
 ELO_REPO_DIR = r"C:\Users\원영이\Desktop\AllStar-Ranking-ELO-"
 
 MACRO_LIST = {
@@ -51,17 +50,28 @@ def is_blank_image(img):
     except Exception as e:
         return False
 
-def upload_to_imgbb(image_path):
+# 🔄 ImgBB 업로드 함수 (재시도 및 타임아웃 로직 추가)
+def upload_to_imgbb(image_path, max_retries=3, retry_delay=3):
     url = "https://api.imgbb.com/1/upload"
-    try:
-        with open(image_path, "rb") as f:
-            res = requests.post(url, {"key": IMGBB_API_KEY, "image": base64.b64encode(f.read())})
-            if res.status_code == 200:
-                return res.json()['data']['url']
-            else:
-                print(f"⚠️ 이미지 업로드 실패 (상태 코드: {res.status_code})")
-    except Exception as e: 
-        print(f"⚠️ ImgBB API 통신 오류: {e}")
+    for attempt in range(1, max_retries + 1):
+        try:
+            with open(image_path, "rb") as f:
+                res = requests.post(
+                    url, 
+                    data={"key": IMGBB_API_KEY, "image": base64.b64encode(f.read())},
+                    timeout=20  # 타임아웃 20초 설정
+                )
+                if res.status_code == 200:
+                    return res.json()['data']['url']
+                else:
+                    print(f"⚠️ 이미지 업로드 실패 (상태 코드: {res.status_code}), 재시도 중 ({attempt}/{max_retries})...")
+        except requests.exceptions.RequestException as e:
+            print(f"⚠️ ImgBB API 통신 오류 ({attempt}/{max_retries}): {e}")
+        
+        if attempt < max_retries:
+            time.sleep(retry_delay)
+            
+    print("❌ ImgBB 최종 업로드 실패 (최대 재시도 횟수 초과)")
     return None
 
 def update_html(urls):
@@ -121,7 +131,7 @@ def extract_ranking_data(excel, wb):
         print(f"   ⚠️ 랭킹 데이터 추출 실패: {e}")
         return None
 
-# 🚀 ELO 저장소로 엑셀 복사 및 푸시하는 함수 (신규 추가)
+# 🚀 ELO 저장소로 엑셀 복사 및 푸시하는 함수
 def git_push_elo_repo(source_excel_path):
     print("\n🚚 [Streamlit ELO 저장소] Ranking_Data.xlsx 전송 중...")
     if not os.path.exists(ELO_REPO_DIR) or ELO_REPO_DIR == r"여기에_ELO_폴더_경로_입력":
@@ -131,11 +141,9 @@ def git_push_elo_repo(source_excel_path):
     target_excel_path = os.path.join(ELO_REPO_DIR, "Ranking_Data.xlsx")
     
     try:
-        # 1. 파일 복사
         shutil.copy2(source_excel_path, target_excel_path)
         print(f"   ✅ ELO 폴더로 엑셀 복사 완료")
         
-        # 2. 깃허브 푸시
         subprocess.run(["git", "add", "Ranking_Data.xlsx"], check=True, cwd=ELO_REPO_DIR)
         msg = f"Update: Ranking Data ({time.strftime('%H:%M:%S')})"
         subprocess.run(["git", "commit", "--allow-empty", "-m", msg], check=True, cwd=ELO_REPO_DIR)
@@ -170,7 +178,6 @@ def main():
         wb.RefreshAll()
         time.sleep(30) 
         
-        # ✅ 랭킹 데이터 추출 후 Streamlit(ELO) 저장소로 푸시
         extracted_excel_path = extract_ranking_data(excel, wb)
         if extracted_excel_path:
             git_push_elo_repo(extracted_excel_path)
@@ -210,12 +217,13 @@ def main():
                 if url:
                     final_urls[m_name] = url
                     print(f"   🔗 주소: {url}")
+                # 연속 업로드 시 서버 부하를 막기 위해 업로드 간격 1.5초 추가
+                time.sleep(1.5)
             else:
                 print(f"❌ {m_name} 최종 캡처 실패")
         
         if final_urls:
             update_html(final_urls)
-            # ✅ HTML 대시보드 저장소 푸시
             git_push_dashboard() 
             
         wb.Save()
