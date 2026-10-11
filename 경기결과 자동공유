@@ -24,6 +24,7 @@ MACRO_LIST = {
     "CopyRangeAsImage_UECLT_CM51": "ueclt.jpg",
     "CopyRangeAsImage_GOLDENBOOT_HF120": "gb.jpg",
     "CopyRangeAsImage_PLAYMAKER_HF120": "pm.jpg",
+    "CopyRangeAsImage_PO_BN39": "po.jpg",
 }
 
 # 실제 랭킹 데이터가 있는 시트 이름
@@ -97,6 +98,7 @@ def update_html(urls):
         "{{LINK_FA2}}": "CopyRangeAsImage_FA2_CM51",
         "{{LINK_GB}}": "CopyRangeAsImage_GOLDENBOOT_HF120",
         "{{LINK_PM}}": "CopyRangeAsImage_PLAYMAKER_HF120",
+        "{{LINK_PO}}": "CopyRangeAsImage_PO_BN39",
     }
     
     for tag, m_name in mapping.items():
