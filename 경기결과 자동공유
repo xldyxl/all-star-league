@@ -176,9 +176,9 @@ def main():
     try:
         wb = excel.Workbooks.Open(os.path.abspath(EXCEL_FILE_PATH))
         
-        print("📥 새로고침 중 (45초)...")
+        print("📥 새로고침 중 (30초)...")
         wb.RefreshAll()
-        time.sleep(45) 
+        time.sleep(30) 
         
         extracted_excel_path = extract_ranking_data(excel, wb)
         if extracted_excel_path:
