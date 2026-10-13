@@ -18,7 +18,7 @@ league_players = [
 "여수가스","오스트리아","용신","피파왕초보구단주","syma"
 ]
 
-TARGET_START_DATETIME = "2026-10-07T00:21:15"
+TARGET_START_DATETIME = "2026-10-04T14:02:46"
 
 # ✅ 1개의 엑셀 파일 저장을 위한 경로 및 파일명 설정 (.xlsx 로 변경)
 SAVE_DIR = r"C:\Users\원영이\Desktop\ATL AUTO"
@@ -49,24 +49,19 @@ all_league_matches = set()
 print(f"\n✅ 확인된 참가자: {len(player_map)}명. 경기 기록 수집 시작...")
 
 # ------------------------------------------
-# 2. 각 유저별 경기 ID 수집
+# 2. 각 유저별 경기 ID 수집 (유저당 최근 10경기만 수집)
 # ------------------------------------------
 for name, ouid in player_map.items():
     print(f"📊 {name}님의 최근 '클래식 1on1(40)' 기록 조회 중...")
-    offset = 0
-    while offset < 500:
-        res = requests.get(
-            f"https://open.api.nexon.com/fconline/v1/user/match?ouid={ouid}&matchtype=40&offset={offset}&limit=100",
-            headers=headers,
-        )
-        if res.status_code != 200:
-            break
+    res = requests.get(
+        f"https://open.api.nexon.com/fconline/v1/user/match?ouid={ouid}&matchtype=40&offset=0&limit=20",
+        headers=headers,
+    )
+    if res.status_code == 200:
         match_ids = res.json()
-        if not match_ids:
-            break
-        all_league_matches.update(match_ids)
-        offset += 100
-        time.sleep(0.05)
+        if match_ids:
+            all_league_matches.update(match_ids)
+    time.sleep(0.05)
 
 # ------------------------------------------
 # 3. 리그 매치 상세 분석 (득점 & 도움 동시 추출)
@@ -162,18 +157,18 @@ for i, m_id in enumerate(all_league_matches):
         assist_results.append(assist_row)
 
 # ------------------------------------------
-# 4. DataFrame 생성, 정렬 및 1개 엑셀 파일(2개 시트)로 저장
+# 4. DataFrame 생성, 오름차순 정렬 및 1개 엑셀 파일(2개 시트)로 저장
 # ------------------------------------------
 # ✅ 바탕화면 폴더가 없을 경우 자동 생성
 os.makedirs(SAVE_DIR, exist_ok=True)
 
 df_goal = pd.DataFrame(goal_results)
 if not df_goal.empty:
-    df_goal = df_goal.sort_values(by="일시", ascending=False)
+    df_goal = df_goal.sort_values(by="일시", ascending=True)  # 오름차순 정렬 (과거 ➔ 최신)
 
 df_assist = pd.DataFrame(assist_results)
 if not df_assist.empty:
-    df_assist = df_assist.sort_values(by="일시", ascending=False)
+    df_assist = df_assist.sort_values(by="일시", ascending=True)  # 오름차순 정렬 (과거 ➔ 최신)
 
 # ✅ pd.ExcelWriter를 사용하여 1개의 파일에 시트를 나누어 저장
 with pd.ExcelWriter(EXCEL_SAVE_PATH, engine="openpyxl") as writer:
@@ -184,5 +179,5 @@ print(
     f"\n🎉 모든 데이터 추출 및 저장 완료! (기준: {TARGET_START_DATETIME} 이후)"
 )
 print(f"📍 [엑셀 파일] 저장 완료: {EXCEL_SAVE_PATH}")
-print("   └─ 📑 시트 1: 득점 기록")
-print("   └─ 📑 시트 2: 도움 기록")
+print("   └─ 📑 시트 1: 득점 기록 (오름차순 정렬)")
+print("   └─ 📑 시트 2: 도움 기록 (오름차순 정렬)")
