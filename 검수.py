@@ -54,7 +54,7 @@ print(f"\n✅ 확인된 참가자: {len(player_map)}명. 경기 기록 수집 �
 for name, ouid in player_map.items():
     print(f"📊 {name}님의 최근 '클래식 1on1(40)' 기록 조회 중...")
     res = requests.get(
-        f"https://open.api.nexon.com/fconline/v1/user/match?ouid={ouid}&matchtype=40&offset=0&limit=20",
+        f"https://open.api.nexon.com/fconline/v1/user/match?ouid={ouid}&matchtype=40&offset=0&limit=10",
         headers=headers,
     )
     if res.status_code == 200:
