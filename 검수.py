@@ -15,11 +15,11 @@ league_players = [
 "ZD장인지참치","0708ManUtd","셀래스틴","호야국","Gucci차붐",
 "여수가스","용신","Legend독수리","syma","ShangHaiPortFC",
 "A지냐크","겐지간지","ZD장인흥미니7","거명","상화의감자타카",
-"FC알힐랄"
+"FC알힐랄","송하영의수플랙스"
 
 ]
 
-TARGET_START_DATETIME = "2026-11-04T12:00:00"
+TARGET_START_DATETIME = "2026-11-08T06:29:26"
 
 # ✅ 1개의 엑셀 파일 저장을 위한 경로 및 파일명 설정 (.xlsx 로 변경)
 SAVE_DIR = r"C:\Users\원영이\Desktop\ATL AUTO"
@@ -55,7 +55,7 @@ print(f"\n✅ 확인된 참가자: {len(player_map)}명. 경기 기록 수집 �
 for name, ouid in player_map.items():
     print(f"📊 {name}님의 최근 '클래식 1on1(40)' 기록 조회 중...")
     res = requests.get(
-        f"https://open.api.nexon.com/fconline/v1/user/match?ouid={ouid}&matchtype=40&offset=0&limit=10",
+        f"https://open.api.nexon.com/fconline/v1/user/match?ouid={ouid}&matchtype=40&offset=0&limit=30",
         headers=headers,
     )
     if res.status_code == 200:
