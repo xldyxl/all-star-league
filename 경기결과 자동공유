@@ -1,6 +1,10 @@
-import win32com.client
-import os, time, requests, base64, subprocess, ctypes, shutil
+import os  # ✅ 알잘딱깔센: 경로 설정을 위해 os 모듈 추가
+import time
+import base64  # 👈 이 부분이 누락되어 있던 것을 추가했습니다!
+import pandas as pd
+import requests
 from PIL import ImageGrab, Image, ImageStat
+import subprocess, ctypes, shutil, win32com.client
 
 # ==========================================
 # 1. 환경 설정
@@ -176,10 +180,6 @@ def main():
     try:
         wb = excel.Workbooks.Open(os.path.abspath(EXCEL_FILE_PATH))
         
-        print("📥 새로고침 중 (30초)...")
-        wb.RefreshAll()
-        time.sleep(30) 
-        
         extracted_excel_path = extract_ranking_data(excel, wb)
         if extracted_excel_path:
             git_push_elo_repo(extracted_excel_path)
@@ -219,7 +219,6 @@ def main():
                 if url:
                     final_urls[m_name] = url
                     print(f"   🔗 주소: {url}")
-                # 연속 업로드 시 서버 부하를 막기 위해 업로드 간격 1.5초 추가
                 time.sleep(1.5)
             else:
                 print(f"❌ {m_name} 최종 캡처 실패")
