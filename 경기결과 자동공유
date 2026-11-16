@@ -1,6 +1,6 @@
-import os  # ✅ 알잘딱깔센: 경로 설정을 위해 os 모듈 추가
+import os
 import time
-import base64  # 👈 이 부분이 누락되어 있던 것을 추가했습니다!
+import base64
 import pandas as pd
 import requests
 from PIL import ImageGrab, Image, ImageStat
@@ -13,7 +13,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 EXCEL_FILE_PATH = os.path.join(BASE_DIR, "All-Star LEAGUE.xlsm")
 IMGBB_API_KEY = "ae84f8a45971fc994c3a2ce9aa29c8f6"
 
-# 🚨 여기에 ELO 랭킹용 깃허브 폴더가 있는 PC의 실제 경로를 입력하세요! (r 뒤에 따옴표 안에 작성)
+# ELO 랭킹용 깃허브 폴더 경로
 ELO_REPO_DIR = r"C:\Users\원영이\Desktop\AllStar-Ranking-ELO-"
 
 MACRO_LIST = {
@@ -31,7 +31,6 @@ MACRO_LIST = {
     "CopyRangeAsImage_PO_BN39": "po.jpg",
 }
 
-# 실제 랭킹 데이터가 있는 시트 이름
 TARGET_SHEET_NAME = "랭킹(ELO)"
 
 def clear_clipboard():
@@ -39,32 +38,79 @@ def clear_clipboard():
         ctypes.windll.user32.OpenClipboard(None)
         ctypes.windll.user32.EmptyClipboard()
         ctypes.windll.user32.CloseClipboard()
-    except Exception as e: 
+    except Exception as e:
         print(f"⚠️ 클립보드 초기화 실패: {e}")
 
-def is_blank_image(img):
-    try:
-        w, h = img.size
-        bottom_crop = img.crop((0, int(h * 0.4), w, h))
-        stat = ImageStat.Stat(bottom_crop)
-        
-        stddev_avg = sum(stat.stddev) / len(stat.stddev)
-        if stddev_avg < 3.0:
-            return True
-        return False
-    except Exception as e:
-        return False
+# 🔍 자동 정밀 이미지 검수 함수 (저장된 파일 직접 검증)
+def verify_saved_image(image_path):
+    """
+    저장된 이미지 파일을 직접 열어 하얀 배경 오류나 부분 렌더링 누락이 있는지 자동 검수합니다.
+    반환값: (통과여부 bool, 사유 str)
+    """
+    if not os.path.exists(image_path):
+        return False, "파일이 생성되지 않음"
 
-# 🔄 ImgBB 업로드 함수 (재시도 및 타임아웃 로직 추가)
+    # 1) 파일 용량 검사 (정상 표 이미지는 보통 수십 KB 이상, 빈 흰색 이미지는 수 KB 수준)
+    file_size = os.path.getsize(image_path)
+    if file_size < 5000:
+        return False, f"파일 용량 비정상적으로 작음 ({file_size} bytes)"
+
+    try:
+        with Image.open(image_path) as img:
+            rgb_img = img.convert("RGB")
+            w, h = rgb_img.size
+
+            if w < 100 or h < 100:
+                return False, f"이미지 해상도 비정상 ({w}x{h})"
+
+            # 2) 전체 픽셀의 표준편차 및 밝기 검사
+            full_stat = ImageStat.Stat(rgb_img)
+            full_stddev = sum(full_stat.stddev) / len(full_stat.stddev)
+            full_mean = sum(full_stat.mean) / len(full_stat.mean)
+
+            if full_stddev < 5.0 or (full_mean > 250 and full_stddev < 10.0):
+                return False, f"전체 하얀 배경 감지 (밝기: {full_mean:.1f}, 편차: {full_stddev:.1f})"
+
+            # 3) 순수 흰색 픽셀 비율 계산 (RGB 모두 250 이상인 픽셀 비율)
+            pixels = list(rgb_img.getdata())
+            total_pixels = len(pixels)
+            white_pixels = sum(1 for r, g, b in pixels if r >= 250 and g >= 250 and b >= 250)
+            white_ratio = white_pixels / total_pixels
+
+            if white_ratio > 0.97:
+                return False, f"흰색 배경 비율 과다 ({white_ratio * 100:.1f}%)"
+
+            # 4) 상·중·하 3등분 영역별 편차 검사 (아래쪽이 잘리거나 하얗게 날아가는 현상 방지)
+            thirds = [
+                ("상단", rgb_img.crop((0, 0, w, int(h * 0.33)))),
+                ("중단", rgb_img.crop((0, int(h * 0.33), w, int(h * 0.66)))),
+                ("하단", rgb_img.crop((0, int(h * 0.66), w, h))),
+            ]
+            blank_sections = 0
+            for sec_name, crop_img in thirds:
+                sec_stat = ImageStat.Stat(crop_img)
+                sec_stddev = sum(sec_stat.stddev) / len(sec_stat.stddev)
+                if sec_stddev < 2.5:
+                    blank_sections += 1
+
+            # 3개 구역 중 2개 이상이 완전히 비어있으면 캡처 불량으로 간주
+            if blank_sections >= 2:
+                return False, f"영역 다수 공백 감지 ({blank_sections}/3 구역 비어있음)"
+
+            return True, f"정상 (용량: {file_size // 1024}KB, 흰색비율: {white_ratio * 100:.1f}%)"
+    except Exception as e:
+        return False, f"이미지 파일 열기 오류: {e}"
+
+# 🔄 ImgBB 업로드 함수
 def upload_to_imgbb(image_path, max_retries=3, retry_delay=3):
     url = "https://api.imgbb.com/1/upload"
     for attempt in range(1, max_retries + 1):
         try:
             with open(image_path, "rb") as f:
                 res = requests.post(
-                    url, 
+                    url,
                     data={"key": IMGBB_API_KEY, "image": base64.b64encode(f.read())},
-                    timeout=20  # 타임아웃 20초 설정
+                    timeout=20
                 )
                 if res.status_code == 200:
                     return res.json()['data']['url']
@@ -83,7 +129,7 @@ def update_html(urls):
     t_path = os.path.join(BASE_DIR, "template.html")
     i_path = os.path.join(BASE_DIR, "index.html")
     
-    if not os.path.exists(t_path): 
+    if not os.path.exists(t_path):
         print("⚠️ template.html 파일을 찾을 수 없습니다!")
         return
 
@@ -112,7 +158,6 @@ def update_html(urls):
         f.write(content)
     print("🌐 index.html 갱신 완료!")
 
-# 🔄 랭킹 데이터 자동 추출 함수
 def extract_ranking_data(excel, wb):
     print(f"\n📊 [{TARGET_SHEET_NAME}] 시트 데이터를 Ranking_Data.xlsx로 추출합니다...")
     try:
@@ -128,7 +173,7 @@ def extract_ranking_data(excel, wb):
             os.remove(save_path)
             
         new_wb.SaveAs(save_path, FileFormat=51)
-        new_wb.Close(False) 
+        new_wb.Close(False)
         
         clear_clipboard()
         print("   ✅ 추출 완료 (임시 저장)")
@@ -137,7 +182,6 @@ def extract_ranking_data(excel, wb):
         print(f"   ⚠️ 랭킹 데이터 추출 실패: {e}")
         return None
 
-# 🚀 ELO 저장소로 엑셀 복사 및 푸시하는 함수
 def git_push_elo_repo(source_excel_path):
     print("\n🚚 [Streamlit ELO 저장소] Ranking_Data.xlsx 전송 중...")
     if not os.path.exists(ELO_REPO_DIR) or ELO_REPO_DIR == r"여기에_ELO_폴더_경로_입력":
@@ -148,7 +192,7 @@ def git_push_elo_repo(source_excel_path):
     
     try:
         shutil.copy2(source_excel_path, target_excel_path)
-        print(f"   ✅ ELO 폴더로 엑셀 복사 완료")
+        print("   ✅ ELO 폴더로 엑셀 복사 완료")
         
         subprocess.run(["git", "add", "Ranking_Data.xlsx"], check=True, cwd=ELO_REPO_DIR)
         msg = f"Update: Ranking Data ({time.strftime('%H:%M:%S')})"
@@ -158,7 +202,6 @@ def git_push_elo_repo(source_excel_path):
     except Exception as e:
         print(f"   ⚠️ ELO 저장소 푸시 실패: {e}")
 
-# 🚀 기존 HTML 대시보드 저장소 푸시 함수
 def git_push_dashboard():
     print("\n🚚 [대시보드 저장소] HTML 및 캡처 이미지 전송 중...")
     try:
@@ -167,7 +210,7 @@ def git_push_dashboard():
         subprocess.run(["git", "commit", "--allow-empty", "-m", msg], check=True, cwd=BASE_DIR)
         subprocess.run(["git", "push", "origin", "main"], check=True, cwd=BASE_DIR)
         print("   🚀 대시보드 깃허브 업데이트 성공!")
-    except Exception as e: 
+    except Exception as e:
         print(f"   ⚠️ 대시보드 푸시 실패: {e}")
 
 def main():
@@ -184,51 +227,91 @@ def main():
         if extracted_excel_path:
             git_push_elo_repo(extracted_excel_path)
 
-        final_urls = {}
+        # ==========================================
+        # 1단계: 전 시트 자동 캡처 및 저장 후 즉시 자동 검수
+        # ==========================================
+        captured_files = {}
+        failed_macros = []
+        MAX_RETRIES = 7
+
         for m_name, f_name in MACRO_LIST.items():
-            print(f"\n📸 [{m_name}] 캡처 진행 중...")
+            print(f"\n📸 [{m_name}] 캡처 및 자동 검수 중...")
             save_path = os.path.join(BASE_DIR, f_name)
-            final_img = None
-            
-            MAX_RETRIES = 5
+            passed = False
+
             for attempt in range(1, MAX_RETRIES + 1):
                 clear_clipboard()
+                # 기존 파일이 남아있다면 혼동 방지를 위해 삭제 후 새로 저장
+                if os.path.exists(save_path):
+                    try:
+                        os.remove(save_path)
+                    except Exception:
+                        pass
+
                 try:
                     excel.Run(m_name)
-                except Exception as e:
+                except Exception:
                     pass
-                time.sleep(1.8)
-                
+                time.sleep(2.0)
+
                 temp_img = ImageGrab.grabclipboard()
-                
-                if temp_img:
-                    temp_img = temp_img.convert("RGBA").convert("RGB")
-                    if is_blank_image(temp_img):
-                        time.sleep(2)
-                        continue
-                    else:
-                        final_img = temp_img
-                        print("   ✅ 정상 이미지 캡처 성공!")
-                        break
-                else:
+                if not temp_img:
+                    print(f"   ⏳ 클립보드 비어있음, 재시도 ({attempt}/{MAX_RETRIES})...")
                     time.sleep(2)
-            
-            if final_img:
-                final_img.save(save_path, "JPEG", quality=70)
-                url = upload_to_imgbb(save_path)
-                if url:
-                    final_urls[m_name] = url
-                    print(f"   🔗 주소: {url}")
-                time.sleep(1.5)
-            else:
-                print(f"❌ {m_name} 최종 캡처 실패")
-        
-        if final_urls:
-            update_html(final_urls)
-            git_push_dashboard() 
-            
+                    continue
+
+                # 파일로 저장한 뒤 실제 파일을 열어 정밀 자동 검수 수행
+                temp_img = temp_img.convert("RGBA").convert("RGB")
+                temp_img.save(save_path, "JPEG", quality=75)
+
+                is_ok, reason = verify_saved_image(save_path)
+                if is_ok:
+                    print(f"   ✅ 자동 검수 통과! ({f_name} - {reason})")
+                    captured_files[m_name] = save_path
+                    passed = True
+                    break
+                else:
+                    print(f"   ⚠️ 자동 검수 불합격 [{reason}] -> 재캡처 시도 ({attempt}/{MAX_RETRIES})...")
+                    time.sleep(2.5)
+
+            if not passed:
+                print(f"   ❌ [{m_name}] {MAX_RETRIES}회 시도 후에도 정상 캡처 실패")
+                failed_macros.append(f"{m_name} ({f_name})")
+
         wb.Save()
-        print("\n🟢 모든 작업이 완료되었습니다.")
+
+        # ==========================================
+        # 2단계: 전체 검수 결과 판정 (불량 시 배포 자동 차단)
+        # ==========================================
+        print("\n" + "="*55)
+        print(f"📋 자동 검수 요약: 총 {len(MACRO_LIST)}개 중 {len(captured_files)}개 통과 / {len(failed_macros)}개 실패")
+        print("="*55)
+
+        if failed_macros:
+            print("🚨 다음 시트의 캡처 오류가 해결되지 않아 깃허브 배포를 자동 중단합니다:")
+            for item in failed_macros:
+                print(f"   - {item}")
+            return
+
+        # ==========================================
+        # 3단계: 전 시트 검수 통과 시 자동 업로드 및 깃허브 배포
+        # ==========================================
+        final_urls = {}
+        for m_name, save_path in captured_files.items():
+            f_name = os.path.basename(save_path)
+            print(f"\n☁️ [{f_name}] ImgBB 업로드 중...")
+            url = upload_to_imgbb(save_path)
+            if url:
+                final_urls[m_name] = url
+                print(f"   🔗 주소: {url}")
+            time.sleep(1.5)
+
+        if len(final_urls) == len(MACRO_LIST):
+            update_html(final_urls)
+            git_push_dashboard()
+            print("\n🟢 모든 자동 검수 및 깃허브 배포가 완료되었습니다.")
+        else:
+            print("\n⚠️ 일부 이미지 업로드에 실패하여 HTML 갱신 및 배포를 보류했습니다.")
         
     except Exception as e:
         print(f"❌ 치명적 오류 발생: {e}")
