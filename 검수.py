@@ -13,13 +13,13 @@ league_players = [
 "Voor","검정소","UNIT","은안","개포동덕배",
 "Special블루","강해린의무회전킥","TSG호펜하임II","Gucci와퍼","오스트리아",
 "ZD장인지참치","0708ManUtd","셀래스틴","호야국","Gucci차붐",
-"여수가스","용신","Legend독수리","syma","ShangHaiPortFC",
+"여수가스","Legend독수리","syma","ShangHaiPortFC",
 "A지냐크","겐지간지","ZD장인흥미니7","거명","상화의감자타카",
 "FC알힐랄","송하영의수플랙스","ROMANIA"
 
 ]
 
-TARGET_START_DATETIME = "2026-11-17T17:50:02"
+TARGET_START_DATETIME = "2026-11-21T07:36:39"
 
 # ✅ 1개의 엑셀 파일 저장을 위한 경로 및 파일명 설정 (.xlsx 로 변경)
 SAVE_DIR = r"C:\Users\원영이\Desktop\ATL AUTO"
